@@ -180,7 +180,7 @@ A step that cannot check every box does not ship. If a requested capability fail
 - **No stubs/placeholders/TODOs in product code.** Banned in committed code: `TODO`, `FIXME`, `XXX`, `HACK`, `stub`, `placeholder`, `not implemented`, `throw new Error("unimplemented")`. Enforced by a lint rule + CI grep (Step 0.11). Every function committed is fully implemented and tested.
 - **Errors:** fallible operations return `Result<T, DomainError>` from `@lodestar/shared`; exceptions only at process boundaries. Every `DomainError` has a stable `code`, human message, and cause chain.
 - **Logging:** structured JSON logger (pino + `pino-roll` rotation — implemented in Step 0.4, interface in `shared`) to local rotating files under `%APPDATA%/lodestar/logs/`; levels trace→fatal; pino redaction paths configured for secrets so no log line ever contains API keys, tokens, webhook URLs, WS tokens, or (unless sharing is opted-in) CMDR-identifying data. Logs never leave the machine.
-- **Naming:** files kebab-case; types PascalCase; functions/vars camelCase; DB tables snake_case; events `Domain.PastTenseVerb` (e.g. `Prospector.RockJudged`).
+- **Naming:** files kebab-case; types PascalCase; functions/vars camelCase; module-level constants SCREAMING_SNAKE_CASE; DB tables snake_case; events `Domain.PastTenseVerb` (e.g. `Prospector.RockJudged`).
 
 ### 4.2 Testing strategy (TDD is mandatory)
 
@@ -344,7 +344,7 @@ One SQLite DB per profile at `%APPDATA%/lodestar/lodestar.sqlite3`, WAL mode, fo
 **Depends on:** none. **Compliance zone(s):** GREEN.
 
 #### Step 0.1 — Wire monorepo tooling
-- Status: [ ] TODO
+- Status: [x] DONE
 - Zone: GREEN
 - Files: `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, `packages/shared/{package.json,tsconfig.json}`
 - Work: install pnpm workspace deps (turbo, typescript, vitest); create `tsconfig.base.json` (strict flags per §4.1) and the `@lodestar/shared` package compiling an initial module (`version.ts` exporting the app version constant read by later steps). **Supply-chain posture from the first install:** dependency lifecycle scripts disabled by default via pnpm config, with an explicit `onlyBuiltDependencies` allowlist for the native modules that genuinely must build (better-sqlite3, electron, esbuild, …); committed lockfile with integrity hashes is the only install source in CI (`--frozen-lockfile`).
@@ -1480,6 +1480,7 @@ bₙ = bₙ₋₁ + ½ (yₙ² + μₙ₋₁ᵀΛₙ₋₁μₙ₋₁ − μₙ�
 ## 11. CHANGELOG
 
 - 2026-07-12 — Stage 1: SSOT authored; repo skeleton + `CLAUDE.md` created; private repo `R3AP3RW1LLY/lodestar` initialized (AGPL-3.0-only). Hardware erratum recorded (RTX 3060 12 GB @ CUDA index 1, not 3060 Ti 8 GB — operator-approved). Test-doubles scope clarified (externals only — operator-approved).
+- 2026-07-12 — **Step 0.1 done.** Toolchain: pnpm 10.24 workspaces + Turbo 2.10 + Vitest 4 + @vitest/coverage-v8; internal-packages pattern (source exports, `noEmit`). **TypeScript pinned to 5.9** after an empirical spike proved typescript-eslint 8.63 crashes on TS 7.0.2 (native) — revisit TS7 when typescript-estree supports it (risk noted). Supply-chain proof performed: an in-repo fixture package with a sentinel-writing `postinstall` was installed and pnpm blocked the script (`pnpm ignored-builds` listed it; sentinel absent); fixture removed. Turbo anonymous telemetry disabled machine-wide (`turbo telemetry disable`; CI gets `TURBO_TELEMETRY_DISABLED=1` in Step 0.11). Root version aligned to 0.1.0; `APP_VERSION` parity test lands in Step 0.2. Per-step adversarial review: 3 reviewers, 7 BLOCKING findings (TS7/typed-lint, missing `esModuleInterop`, turbo outputs/task-graph, missing coverage provider, version drift, allowlist proof, uncommitted lockfile) — all fixed pre-commit.
 - 2026-07-12 — Stage 1 adversarial review (architecture + design + red-team, three independent reviewers; 22 BLOCKING + ~35 NOTE findings) applied in full. Highlights: Status.json bit 24 = InMainShip correction (safety-critical); `Scan` event added as the journal source of ring type/reserve; canonical commodity dictionary step added (Rhodplumsite fixed, Tritium added); Assay orchestrator step added; minimal egress gateway + artifact downloader pulled into Phase 0 (redirect/loopback/install-time hardening); polling tailer for Windows journal latency with honest budgets; native-ABI dual-build strategy; compliance task made uncache-able; one-emission-per-PTT-cycle guarantee; Supercruise-Assist/Docking-Computer binds explicitly FORBIDDEN; community/seed provenance excluded from ML training; fixtures treated as public-history from commit #1; migration numbers 001–013 assigned; overlay/alerts rezoned GREEN in §2.1; `ai`→`voice` firewall; dependency-direction table completed (compliance/scripts/sidecars). Awaiting operator review and "Begin Phase 0."
 
 

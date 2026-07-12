@@ -1,5 +1,5 @@
 # @lodestar/shared
 
-Shared TypeScript primitives: domain types, branded units (tons, credits, ly), Result/error types, logger interface. Zero runtime dependencies.
+Shared TypeScript primitives: domain types, branded units (tons, credits, ly), Result/error types, logger interface, IPC channel contracts. Zero runtime dependencies.
 
-Delivered by: Phase 0. See [LODESTAR_SSOT.md](../../LODESTAR_SSOT.md) — no implementation exists here until its phase begins; LODESTAR never commits placeholder code.
+Exposed as source (`exports` → `./src/index.ts`); consumers bundle or test against the TypeScript directly — nothing is emitted. Current contents: `APP_VERSION` (Step 0.1); Result/units/errors/logging/channels primitives arrive in Step 0.2. See [LODESTAR_SSOT.md](../../LODESTAR_SSOT.md).

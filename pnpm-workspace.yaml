@@ -2,3 +2,13 @@ packages:
   - "apps/*"
   - "packages/*"
   - "services/*"
+
+# Supply-chain posture (SSOT §Step 0.1 / R15): dependency lifecycle scripts do
+# NOT run unless the package is named here. Only native modules that genuinely
+# must build/download binaries are allowed. pnpm matches these by BARE NAME
+# across the whole graph — re-audit this list whenever the lockfile changes,
+# and re-review each entry's install script when the package actually lands.
+onlyBuiltDependencies:
+  - electron
+  - esbuild
+  - better-sqlite3

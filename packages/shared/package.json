@@ -1,0 +1,16 @@
+{
+  "name": "@lodestar/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared TypeScript primitives: domain types, branded units, Result/error types, logger interface, IPC channel contracts. Zero runtime dependencies.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

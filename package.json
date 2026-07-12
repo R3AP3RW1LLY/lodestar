@@ -1,6 +1,6 @@
 {
   "name": "lodestar",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "LODESTAR — Mining Command Intelligence for Elite Dangerous. ToS-compliant, local-AI-only mining companion.",
   "license": "AGPL-3.0-only",
@@ -20,5 +20,14 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "compliance": "turbo run compliance"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.7.0",
+    "turbo": "^2.10.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.63.0",
+    "vitest": "^4.1.10"
   }
 }

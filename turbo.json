@@ -3,18 +3,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**"]
+      "outputs": ["dist/**", "out/**"]
     },
     "test": {
-      "dependsOn": ["build"],
       "outputs": ["coverage/**"]
     },
     "lint": {},
-    "typecheck": {
-      "dependsOn": ["^build"]
-    },
+    "typecheck": {},
     "compliance": {
-      "dependsOn": ["build"],
       "cache": false
     },
     "dev": {

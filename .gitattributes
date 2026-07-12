@@ -1,0 +1,10 @@
+* text=auto eol=lf
+# Test fixtures must keep their exact original bytes (journal files are
+# produced by the game on Windows; line endings are part of what tests exercise).
+**/test/fixtures/** -text
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary
+*.ogg binary
+*.wav binary
