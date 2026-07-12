@@ -7,21 +7,26 @@
   "type": "module",
   "main": "./out/main/index.cjs",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/ensure-abi.mjs electron && electron-vite dev",
     "build": "electron-vite build",
-    "start": "electron-vite preview",
+    "start": "node scripts/ensure-abi.mjs electron && electron-vite preview",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:e2e": "electron-vite build && playwright test"
+    "test:e2e": "node scripts/ensure-abi.mjs electron && electron-vite build && playwright test",
+    "rebuild:electron": "node scripts/ensure-abi.mjs electron",
+    "rebuild:node": "node scripts/ensure-abi.mjs node"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/orbitron": "^5.2.8",
+    "@lodestar/core": "workspace:*",
     "@lodestar/shared": "workspace:*",
+    "better-sqlite3": "^12.11.1",
     "pino": "^9.13.1",
     "pino-roll": "^3.1.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
     "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

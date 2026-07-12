@@ -10,6 +10,8 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { APP_VERSION } from "@lodestar/shared";
 import type { Logger } from "@lodestar/shared";
+import { createDbService } from "@lodestar/core";
+import type { DbService } from "@lodestar/core";
 import { acquireSingleInstance } from "./app-lifecycle.js";
 import { createMainWindow } from "./windows.js";
 import { registerIpcHandlers } from "./ipc.js";
@@ -19,6 +21,7 @@ import { getDataDir, getLogsDir } from "./paths.js";
 
 let mainWindow: BrowserWindow | undefined;
 let logger: Logger | undefined;
+let dbService: DbService | undefined;
 
 function focusExistingWindow(): void {
   if (mainWindow === undefined) return;
@@ -80,20 +83,32 @@ try {
 }
 
 async function bootstrap(): Promise<void> {
+  const dataDir = getDataDir(app);
   const logsDir = getLogsDir(app);
   mkdirSync(logsDir, { recursive: true });
   const destination = await createRollingDestination(logsDir);
   logger = createLogger({ destination, base: { app: "lodestar", version: APP_VERSION } });
-  logger.info("main.starting", { dataDir: getDataDir(app) });
+  logger.info("main.starting", { dataDir });
+
+  dbService = createDbService(join(dataDir, "lodestar.sqlite3"));
+  if (dbService.status() === "ok") {
+    logger.info("db.opened", { status: "ok" });
+  } else {
+    logger.error("db.open-failed", { error: String(dbService.lastError()) });
+  }
 
   registerIpcHandlers(ipcMain, {
     getHealth: () =>
       buildHealth({
         version: APP_VERSION,
-        // Real probes go live in Steps 0.6 (db) and 0.7 (journal).
-        db: () => "not-configured",
+        db: () => dbService?.status() ?? "not-configured",
+        // The journal probe goes live in Step 0.7.
         journal: () => "not-configured",
       }),
+  });
+
+  app.on("will-quit", () => {
+    dbService?.close();
   });
 
   mainWindow = createMainWindow();

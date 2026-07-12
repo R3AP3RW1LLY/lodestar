@@ -12,3 +12,10 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - better-sqlite3
+
+# Pin the native SQLite binding to a single version so exactly ONE artifact
+# exists in the store. Its ABI is toggled between Node (vitest/CI) and Electron
+# (the app) via the desktop rebuild:node / rebuild:electron scripts — a rebuild,
+# never a reinstall (SSOT Step 0.6). Committed state is Node ABI.
+overrides:
+  better-sqlite3: 12.11.1

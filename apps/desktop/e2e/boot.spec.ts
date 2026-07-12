@@ -27,8 +27,11 @@ test("boots to the Command Deck shell and renders the IPC health payload", async
   try {
     const window = await app.firstWindow();
     await expect(window.getByTestId("version")).toHaveText("0.1.0");
-    await expect(window.getByTestId("db-status")).toHaveText("not-configured");
+    // The profile DB is opened and migrated at boot → status ok (Step 0.6).
+    await expect(window.getByTestId("db-status")).toHaveText("ok");
     await expect(window.getByTestId("journal-status")).toHaveText("not-configured");
+    // The migrated SQLite file exists on the D-drive data dir.
+    expect(existsSync(join(dataDir, "lodestar.sqlite3"))).toBe(true);
     // The logger wrote a rotating log file into the D-drive data dir, not C:.
     const logsDir = join(dataDir, "logs");
     expect(existsSync(logsDir)).toBe(true);

@@ -1,0 +1,22 @@
+{
+  "name": "@lodestar/data",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SQLite schema, forward-only migration runner, bundled seed data, and typed repositories.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lodestar/shared": "workspace:*",
+    "better-sqlite3": "^12.11.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}

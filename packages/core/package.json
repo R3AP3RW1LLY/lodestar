@@ -1,0 +1,19 @@
+{
+  "name": "@lodestar/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Core service: journal watcher, event bus, domain state, SQLite persistence, IPC/WS bridge.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lodestar/data": "workspace:*",
+    "@lodestar/shared": "workspace:*"
+  }
+}
