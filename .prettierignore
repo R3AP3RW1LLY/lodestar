@@ -7,4 +7,5 @@ coverage/
 pnpm-lock.yaml
 LICENSE
 *.md
+.env.example
 **/test/fixtures/

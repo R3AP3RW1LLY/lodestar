@@ -1,0 +1,101 @@
+/**
+ * Electron main entry (SSOT Step 0.4). Enforces single-instance, redirects all
+ * runtime data to the configured data dir (D: on this machine per the operator
+ * constraint), wires the pino logger, registers typed IPC, and boots the
+ * Command Deck window.
+ */
+
+import { app, dialog, ipcMain, BrowserWindow } from "electron";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { APP_VERSION } from "@lodestar/shared";
+import type { Logger } from "@lodestar/shared";
+import { acquireSingleInstance } from "./app-lifecycle.js";
+import { createMainWindow } from "./windows.js";
+import { registerIpcHandlers } from "./ipc.js";
+import { buildHealth } from "./health.js";
+import { createLogger, createRollingDestination } from "./logger.js";
+import { getDataDir, getLogsDir } from "./paths.js";
+
+let mainWindow: BrowserWindow | undefined;
+let logger: Logger | undefined;
+
+function focusExistingWindow(): void {
+  if (mainWindow === undefined) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
+}
+
+/**
+ * Startup failures happen before the structured logger exists, and a packaged
+ * GUI app has no console. Record the failure durably (best-effort emergency
+ * file next to temp) and show it, so a bad data drive is never a silent crash.
+ */
+function reportFatalStartup(error: unknown): void {
+  const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
+  try {
+    appendFileSync(join(app.getPath("temp"), "lodestar-startup-error.log"), `${message}\n`);
+  } catch {
+    // Emergency path itself failed — nothing more we can durably do.
+  }
+  try {
+    dialog.showErrorBox("LODESTAR failed to start", message);
+  } catch {
+    console.error("LODESTAR failed to start:", message);
+  }
+}
+
+try {
+  // Redirect userData (caches, GPU cache, and our profile data) onto the
+  // configured drive BEFORE anything else — nothing lands on C:, and the
+  // single-instance lock is keyed on this profile, not a default one.
+  const dataDir = getDataDir(app);
+  mkdirSync(dataDir, { recursive: true });
+  app.setPath("userData", dataDir);
+
+  if (!acquireSingleInstance(app, focusExistingWindow)) {
+    // Another instance already owns the lock. This marker lets the e2e test
+    // distinguish a correct lock-denial quit from an unrelated crash.
+    console.log("LODESTAR_SECOND_INSTANCE_QUIT");
+  } else {
+    app
+      .whenReady()
+      .then(bootstrap)
+      .catch((error: unknown) => {
+        reportFatalStartup(error);
+        app.quit();
+      });
+
+    app.on("window-all-closed", () => {
+      if (process.platform !== "darwin") app.quit();
+    });
+
+    app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) mainWindow = createMainWindow();
+    });
+  }
+} catch (error) {
+  reportFatalStartup(error);
+  app.quit();
+}
+
+async function bootstrap(): Promise<void> {
+  const logsDir = getLogsDir(app);
+  mkdirSync(logsDir, { recursive: true });
+  const destination = await createRollingDestination(logsDir);
+  logger = createLogger({ destination, base: { app: "lodestar", version: APP_VERSION } });
+  logger.info("main.starting", { dataDir: getDataDir(app) });
+
+  registerIpcHandlers(ipcMain, {
+    getHealth: () =>
+      buildHealth({
+        version: APP_VERSION,
+        // Real probes go live in Steps 0.6 (db) and 0.7 (journal).
+        db: () => "not-configured",
+        journal: () => "not-configured",
+      }),
+  });
+
+  mainWindow = createMainWindow();
+  logger.info("main.ready");
+}

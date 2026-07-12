@@ -20,6 +20,8 @@ test-results/
 *.sqlite3
 *.db
 data/local/
+.lodestar-data/
+.electron-cache/
 resources/models/
 *.onnx
 *.gguf

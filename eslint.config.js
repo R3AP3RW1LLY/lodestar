@@ -54,7 +54,26 @@ export default tseslint.config(
   },
   {
     files: ["**/*.tsx"],
-    extends: [reactHooks.configs["recommended-latest"]],
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "error",
+    },
+  },
+  {
+    // Renderer code runs sandboxed with no Node — banning node globals here
+    // turns "process is not defined" runtime crashes into lint errors.
+    files: ["apps/*/src/renderer/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        { name: "process", message: "The renderer has no Node runtime (sandboxed)." },
+        { name: "require", message: "The renderer has no Node runtime (sandboxed)." },
+        { name: "__dirname", message: "The renderer has no Node runtime (sandboxed)." },
+        { name: "Buffer", message: "The renderer has no Node runtime (sandboxed)." },
+        { name: "global", message: "The renderer has no Node runtime (sandboxed)." },
+      ],
+    },
   },
   {
     files: ["**/*.test.ts", "**/*.test.tsx"],
