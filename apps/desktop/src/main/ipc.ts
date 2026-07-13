@@ -15,6 +15,7 @@ import type {
   SettingsSetRequest,
   SettingsSnapshot,
   TtsTestResult,
+  TtsVoiceOption,
   WireResult,
 } from "@lodestar/shared";
 import { domainError, err, ok, toWireResult } from "@lodestar/shared";
@@ -55,6 +56,8 @@ export interface IpcDeps {
   readonly subscribeState: () => RootState;
   /** Settings test-phrase button: synthesize + push a callout, report success. */
   readonly testTts: () => Promise<TtsTestResult>;
+  /** The pinned TTS voice options for the Settings picker. */
+  readonly listVoices: () => readonly TtsVoiceOption[];
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -104,5 +107,9 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
 
   ipcMain.handle("tts.test", async (): Promise<WireResult<TtsTestResult>> =>
     toWireResult(ok(await deps.testTts())),
+  );
+
+  ipcMain.handle("tts.voices", (): WireResult<readonly TtsVoiceOption[]> =>
+    toWireResult(ok(deps.listVoices())),
   );
 }

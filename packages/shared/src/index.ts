@@ -27,6 +27,7 @@ export type {
   GpuInfo,
   TtsAudio,
   TtsTestResult,
+  TtsVoiceOption,
   ChannelPayloads,
   Channel,
   Envelope,

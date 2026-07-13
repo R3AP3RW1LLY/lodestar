@@ -49,7 +49,22 @@ export const VOICES: Readonly<Record<string, VoiceAsset>> = {
     modelFile: "en-us-ryan-high.onnx",
     configFile: "en-us-ryan-high.onnx.json",
   },
+  "en_US-libritts-high": {
+    id: "en_US-libritts-high",
+    displayName: "LibriTTS — US English (high, warmer)",
+    archive: {
+      url: "https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-en-us-libritts-high.tar.gz",
+      sha256: "328e3e9cb573a43a6c5e1aeca386e971232bdb1418a74d4674cf726c973a0ea8",
+      bytes: 120_620_366,
+    },
+    modelFile: "en-us-libritts-high.onnx",
+    configFile: "en-us-libritts-high.onnx.json",
+  },
 };
 
-/** The operator-chosen default voice (Step 2.7b). */
+/** Voice options for the Settings picker (id + human label), from the pinned catalog. */
+export const VOICE_CATALOG: readonly { readonly id: string; readonly displayName: string }[] =
+  Object.values(VOICES).map((v) => ({ id: v.id, displayName: v.displayName }));
+
+/** The default voice (Step 2.7b). Users switch via the Settings voice picker. */
 export const DEFAULT_VOICE_ID = "en_US-ryan-high";

@@ -17,6 +17,7 @@ describe("IPC channels", () => {
       "system.gpus",
       "tts.audio",
       "tts.test",
+      "tts.voices",
     ]);
   });
 

@@ -38,6 +38,10 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
     testTts: vi.fn().mockResolvedValue({ ok: true, error: null }),
+    listVoices: vi.fn().mockResolvedValue([
+      { id: "en_US-ryan-high", displayName: "Ryan" },
+      { id: "en_US-libritts-high", displayName: "LibriTTS" },
+    ]),
     onTtsAudio: vi.fn(() => () => {}),
     ...over,
   };

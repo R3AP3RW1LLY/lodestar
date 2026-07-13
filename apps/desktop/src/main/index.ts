@@ -33,6 +33,7 @@ import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import { buildHealth } from "./health.js";
 import { createLogger, createRollingDestination } from "./logger.js";
 import { getDataDir, getLogsDir } from "./paths.js";
+import { VOICE_CATALOG } from "@lodestar/voice";
 import { createTtsService } from "./tts-service.js";
 import { wireAssay } from "./assay-wiring.js";
 import type { AssayWiring } from "./assay-wiring.js";
@@ -227,6 +228,7 @@ async function bootstrap(): Promise<void> {
     listGpus,
     subscribeState: () => stateBridge.snapshot(),
     testTts: () => ttsService.test(),
+    listVoices: () => VOICE_CATALOG,
   });
 
   engine.start();
