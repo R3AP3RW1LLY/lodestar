@@ -18,7 +18,7 @@ import type { SettingsBridge } from "./settings-bridge.js";
 import { listGpus } from "./gpu.js";
 import { acquireSingleInstance } from "./app-lifecycle.js";
 import { createMainWindow } from "./windows.js";
-import { registerIpcHandlers } from "./ipc.js";
+import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import { buildHealth } from "./health.js";
 import { createLogger, createRollingDestination } from "./logger.js";
 import { getDataDir, getLogsDir } from "./paths.js";
@@ -121,7 +121,7 @@ async function bootstrap(): Promise<void> {
   }
 
   const activeBridge = bridge;
-  registerIpcHandlers(ipcMain, {
+  registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
         version: APP_VERSION,

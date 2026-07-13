@@ -11,7 +11,7 @@
     "build": "electron-vite build",
     "start": "node scripts/ensure-abi.mjs electron && electron-vite preview",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:e2e": "node scripts/ensure-abi.mjs electron && electron-vite build && playwright test",
     "rebuild:electron": "node scripts/ensure-abi.mjs electron",
     "rebuild:node": "node scripts/ensure-abi.mjs node"

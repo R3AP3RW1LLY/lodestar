@@ -47,4 +47,11 @@ describe("DataAgeBadge", () => {
     expect(badge).toBeInTheDocument();
     expect(badge).toHaveAttribute("title", expect.stringContaining("unknown"));
   });
+
+  it("falls back to the real clock when no `now` is injected", () => {
+    // Epoch-0 data is decades old against the live clock → the badge still renders
+    // (exercising the default Date.now() path), carrying its source provenance.
+    render(<DataAgeBadge timestamp={0} source="EDSM" />);
+    expect(screen.getByTitle(/EDSM/)).toBeInTheDocument();
+  });
 });

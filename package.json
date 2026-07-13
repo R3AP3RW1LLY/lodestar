@@ -16,6 +16,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "pretest": "node apps/desktop/scripts/ensure-abi.mjs node",
     "test": "turbo run test",
     "lint": "eslint . --max-warnings 0 && prettier --check . && node packages/scripts/src/check-banned-patterns.ts && node packages/scripts/src/check-dependency-direction.ts",
     "typecheck": "turbo run typecheck",

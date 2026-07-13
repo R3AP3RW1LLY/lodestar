@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { findBannedPatterns, scanContent } from "./check-banned-patterns.js";
+import { findBannedPatterns, runBannedPatternsCli, scanContent } from "./check-banned-patterns.js";
 
 // Banned words are assembled by concatenation everywhere in this file so the
 // scanner cannot trip over its own test suite.
@@ -155,5 +155,33 @@ describe("findBannedPatterns (directory walk)", () => {
       writeFileSync(join(dir, name), `${comment}\n`);
     }
     expect(findBannedPatterns(dir).length).toBe(6);
+  });
+});
+
+describe("runBannedPatternsCli", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "lodestar-banned-cli-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("returns exit code 0 and reports clean for a marker-free tree", () => {
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "clean.ts"), "export const a = 1;\n");
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    expect(runBannedPatternsCli(dir)).toBe(0);
+    expect(log).toHaveBeenCalledWith("banned-patterns: clean");
+  });
+
+  it("returns exit code 1 and prints each hit when markers are present", () => {
+    mkdirSync(join(dir, "src"), { recursive: true });
+    writeFileSync(join(dir, "src", "dirty.ts"), `export const b = 2;\n// ${TO_DO}: later\n`);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(runBannedPatternsCli(dir)).toBe(1);
+    expect(err).toHaveBeenCalled();
+    expect(err.mock.calls.some(([m]) => String(m).includes("banned marker"))).toBe(true);
   });
 });

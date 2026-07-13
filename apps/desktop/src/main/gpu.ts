@@ -27,19 +27,28 @@ export function parseNvidiaSmiCsv(csv: string): GpuInfo[] {
   return gpus;
 }
 
-export async function listGpus(): Promise<GpuInfo[]> {
-  return new Promise((resolve) => {
+/** Result of invoking the GPU query tool: `error` true when the tool is absent or fails. */
+export interface GpuQueryResult {
+  readonly error: boolean;
+  readonly stdout: string;
+}
+
+/** Injectable so the (best-effort, environment-dependent) tool call can be tested deterministically. */
+export type GpuQuery = () => Promise<GpuQueryResult>;
+
+const nvidiaSmiQuery: GpuQuery = () =>
+  new Promise((resolve) => {
     execFile(
       "nvidia-smi",
       ["--query-gpu=index,uuid,name,memory.total", "--format=csv,noheader"],
       { timeout: 5000, windowsHide: true },
       (error, stdout) => {
-        if (error) {
-          resolve([]);
-          return;
-        }
-        resolve(parseNvidiaSmiCsv(stdout));
+        resolve({ error: error !== null, stdout });
       },
     );
   });
+
+export async function listGpus(query: GpuQuery = nvidiaSmiQuery): Promise<GpuInfo[]> {
+  const { error, stdout } = await query();
+  return error ? [] : parseNvidiaSmiCsv(stdout);
 }

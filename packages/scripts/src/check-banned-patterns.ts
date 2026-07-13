@@ -114,11 +114,8 @@ export function findBannedPatterns(root: string): BannedHit[] {
   return hits;
 }
 
-const isMain =
-  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-
-if (isMain) {
-  const root = fileURLToPath(new URL("../../../", import.meta.url));
+/** Runs the check over `root` and returns the process exit code (0 clean, 1 dirty). */
+export function runBannedPatternsCli(root: string): number {
   const hits = findBannedPatterns(root);
   if (hits.length > 0) {
     for (const hit of hits) {
@@ -127,7 +124,15 @@ if (isMain) {
     console.error(
       `\n${String(hits.length)} banned marker(s) found. LODESTAR commits no placeholders.`,
     );
-    process.exit(1);
+    return 1;
   }
   console.log("banned-patterns: clean");
+  return 0;
+}
+
+const isMain =
+  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+
+if (isMain) {
+  process.exit(runBannedPatternsCli(fileURLToPath(new URL("../../../", import.meta.url))));
 }

@@ -21,6 +21,26 @@ export interface IpcMainLike {
   handle: (channel: Channel, listener: (...args: unknown[]) => unknown) => void;
 }
 
+/** Electron's ipcMain: it invokes listeners as (invokeEvent, ...args). */
+export interface ElectronIpcMain {
+  handle: (channel: Channel, listener: (event: unknown, ...args: unknown[]) => unknown) => void;
+}
+
+/**
+ * Adapts Electron's ipcMain to the payload-only IpcMainLike the handlers expect.
+ * Electron passes the IpcMainInvokeEvent as the first listener argument and the
+ * renderer's request as the second; our handlers are pure functions of the
+ * request, so the event is stripped here at the boundary. Without this, every
+ * arg-taking channel would read the event object as its payload.
+ */
+export function electronIpcAdapter(ipcMain: ElectronIpcMain): IpcMainLike {
+  return {
+    handle: (channel, listener) => {
+      ipcMain.handle(channel, (_event, ...args) => listener(...args));
+    },
+  };
+}
+
 export interface IpcDeps {
   readonly getHealth: () => AppHealth;
   readonly getSettings: () => SettingsSnapshot;

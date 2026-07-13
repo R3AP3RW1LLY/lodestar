@@ -249,23 +249,28 @@ const NODE_BUILTINS = new Set([
   "buffer",
 ]);
 
-const isMain =
-  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-
-if (isMain) {
-  const root = repoRoot();
+/** Runs the check over `root` and returns the process exit code (0 clean, 1 violations, 2 bad root). */
+export function runDependencyDirectionCli(root: string): number {
   if (!existsSync(join(root, "pnpm-workspace.yaml"))) {
     console.error(
       `dependency-direction: cannot locate repo root (no pnpm-workspace.yaml at ${root})`,
     );
-    process.exit(2);
+    return 2;
   }
   const packages = discoverPackages(root);
   const violations = checkDependencyDirection(root);
   if (violations.length > 0) {
     for (const violation of violations) console.error(violation);
     console.error(`\n${String(violations.length)} dependency-direction violation(s).`);
-    process.exit(1);
+    return 1;
   }
   console.log(`dependency-direction: clean (${String(packages.length)} packages scanned)`);
+  return 0;
+}
+
+const isMain =
+  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+
+if (isMain) {
+  process.exit(runDependencyDirectionCli(repoRoot()));
 }

@@ -50,4 +50,12 @@ describe("MfdGauge", () => {
     expect(meter).toHaveAttribute("aria-valuenow", "200");
     expect(screen.getByTestId("gauge-fill")).toHaveStyle({ width: "100%" });
   });
+
+  it("keeps ARIA coherent for a non-positive max (valuemax and valuenow both 0)", () => {
+    render(<MfdGauge label="CARGO" value={5} max={0} />);
+    const meter = screen.getByRole("meter", { name: "CARGO" });
+    expect(meter).toHaveAttribute("aria-valuemax", "0");
+    expect(meter).toHaveAttribute("aria-valuenow", "0");
+    expect(screen.getByTestId("gauge-fill")).toHaveStyle({ width: "0%" });
+  });
 });

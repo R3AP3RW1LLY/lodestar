@@ -183,4 +183,55 @@ describe("Settings screen", () => {
       expect(setSecret).toHaveBeenCalledWith({ key: "inaraApiKey", value: null });
     });
   });
+
+  it("surfaces an error when the initial settings load fails", async () => {
+    stubApi({ getSettings: vi.fn().mockRejectedValue(new Error("db.unavailable: no profile")) });
+    render(<Settings />);
+    await waitFor(() => {
+      expect(screen.getByText(/db.unavailable/i)).toBeInTheDocument();
+    });
+    // With no settings loaded, the form stays in its loading state (never crashes).
+    expect(screen.getByText(/loading settings/i)).toBeInTheDocument();
+  });
+
+  it("saves the AI GPU UUID via its dedicated Save button", async () => {
+    const saved = { ...BASE_SETTINGS, aiGpuUuid: "GPU-manual-entry" };
+    const setSetting = vi.fn().mockResolvedValue(saved);
+    stubApi({ setSetting });
+    render(<Settings />);
+    const input = await screen.findByLabelText(/ai gpu uuid/i);
+    await userEvent.type(input, "GPU-manual-entry");
+    await userEvent.click(screen.getByRole("button", { name: /save ai gpu/i }));
+    await waitFor(() => {
+      expect(setSetting).toHaveBeenCalledWith({ key: "aiGpuUuid", value: "GPU-manual-entry" });
+    });
+  });
+
+  it("normalizes a cleared AI GPU field to null (empty string is not a UUID)", async () => {
+    const setSetting = vi.fn().mockResolvedValue(BASE_SETTINGS);
+    stubApi({
+      getSettings: vi.fn().mockResolvedValue({ ...BASE_SETTINGS, aiGpuUuid: "GPU-old" }),
+      setSetting,
+    });
+    render(<Settings />);
+    const input = await screen.findByLabelText(/ai gpu uuid/i);
+    expect(input).toHaveValue("GPU-old");
+    await userEvent.clear(input);
+    await userEvent.click(screen.getByRole("button", { name: /save ai gpu/i }));
+    await waitFor(() => {
+      expect(setSetting).toHaveBeenCalledWith({ key: "aiGpuUuid", value: null });
+    });
+  });
+
+  it("surfaces an error when clearing a secret fails", async () => {
+    const setSecret = vi.fn().mockRejectedValue(new Error("secrets.write-failed: disk"));
+    stubApi({ setSecret });
+    render(<Settings />);
+    await screen.findByLabelText(/inara api key/i);
+    const clearButtons = screen.getAllByRole("button", { name: /^clear$/i });
+    await userEvent.click(clearButtons[0]!);
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/write-failed/i);
+    });
+  });
 });

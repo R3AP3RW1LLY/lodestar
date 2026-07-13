@@ -1,8 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CLASSIFICATION, checkDependencyDirection } from "./check-dependency-direction.js";
+import {
+  CLASSIFICATION,
+  checkDependencyDirection,
+  importSpecifiers,
+  runDependencyDirectionCli,
+} from "./check-dependency-direction.js";
 
 function writeSource(root: string, dir: string, name: string, body: string): void {
   const pkgDir = join(root, dir);
@@ -168,5 +173,63 @@ describe("checkDependencyDirection", () => {
       }
     }
     expect(seen.has("@lodestar/voice")).toBe(false);
+  });
+
+  it("permits an intra-package relative import (resolves to no foreign package)", () => {
+    makePackage(root, "packages/core", "@lodestar/core", []);
+    writeSource(
+      root,
+      "packages/core",
+      "@lodestar/core",
+      `import { helper } from "./util/helper.js";\nexport const x = helper;\n`,
+    );
+    expect(checkDependencyDirection(root)).toEqual([]);
+  });
+});
+
+describe("importSpecifiers", () => {
+  it("captures `export ... from` re-exports (value and type-only)", () => {
+    const refs = importSpecifiers(
+      [`export { a } from "@lodestar/shared";`, `export type { T } from "@lodestar/data";`].join(
+        "\n",
+      ),
+    );
+    expect(refs).toContainEqual({ spec: "@lodestar/shared", typeOnly: false });
+    expect(refs).toContainEqual({ spec: "@lodestar/data", typeOnly: true });
+  });
+});
+
+describe("runDependencyDirectionCli", () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "lodestar-deps-cli-"));
+  });
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("returns exit code 2 when no pnpm-workspace.yaml marks the repo root", () => {
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(runDependencyDirectionCli(root)).toBe(2);
+    expect(err.mock.calls.some(([m]) => String(m).includes("cannot locate repo root"))).toBe(true);
+  });
+
+  it("returns exit code 0 and reports clean for a compliant workspace", () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n");
+    makePackage(root, "packages/shared", "@lodestar/shared", []);
+    makePackage(root, "packages/data", "@lodestar/data", ["@lodestar/shared"]);
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    expect(runDependencyDirectionCli(root)).toBe(0);
+    expect(log.mock.calls.some(([m]) => String(m).includes("clean"))).toBe(true);
+  });
+
+  it("returns exit code 1 and prints each violation for a forbidden dependency", () => {
+    writeFileSync(join(root, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n");
+    makePackage(root, "packages/ai", "@lodestar/ai", []);
+    makePackage(root, "packages/intelligence", "@lodestar/intelligence", ["@lodestar/ai"]);
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(runDependencyDirectionCli(root)).toBe(1);
+    expect(err.mock.calls.some(([m]) => String(m).includes("@lodestar/ai"))).toBe(true);
   });
 });

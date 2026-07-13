@@ -29,6 +29,15 @@ if (current === target) {
   process.exit(0);
 }
 
+// A fresh `pnpm install` runs better-sqlite3's own install script, which produces
+// a Node-ABI binary. With no marker yet, adopt that for the Node target without a
+// redundant rebuild (keeps `pretest` a fast no-op on clean checkouts / CI). The
+// Electron target still rebuilds — a fresh install is never Electron-ABI.
+if (current === "" && target === "node") {
+  writeFileSync(marker, "node", "utf8");
+  process.exit(0);
+}
+
 console.log(
   `ensure-abi: rebuilding better-sqlite3 for ${target} ABI (was '${current || "unknown"}')`,
 );

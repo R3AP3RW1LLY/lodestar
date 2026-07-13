@@ -82,7 +82,17 @@ export function Settings(): React.JSX.Element {
   }, [save, settings]);
 
   if (settings === null) {
-    return <p>loading settings…</p>;
+    // A failed initial load must be visible — never a permanent silent spinner.
+    return (
+      <div className="p-4">
+        {error !== null && (
+          <p role="alert" className="text-signal-danger">
+            {error}
+          </p>
+        )}
+        <p>loading settings…</p>
+      </div>
+    );
   }
 
   return (

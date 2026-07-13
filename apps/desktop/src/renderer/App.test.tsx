@@ -99,6 +99,21 @@ describe("App shell", () => {
     }
   });
 
+  it("does NOT claim 'connection lost' while it has never connected (still starting up)", async () => {
+    const getHealth = vi.fn().mockRejectedValue(new Error("main not ready"));
+    stubApi({ getHealth });
+    vi.useFakeTimers();
+    try {
+      render(<App />);
+      // Two failing polls, never a success → everConnected stays false.
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(screen.queryByText(/connection lost/i)).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("shows an 'arrives in Phase N' notice for an unbuilt module (no dead link)", () => {
     stubApi();
     render(<App />);

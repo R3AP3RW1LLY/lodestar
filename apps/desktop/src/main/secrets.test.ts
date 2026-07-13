@@ -1,8 +1,31 @@
-import { describe, expect, it } from "vitest";
-import { fileSecretStorage } from "./secrets.js";
+import { describe, expect, it, vi } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+// The real safeStorage only exists in the Electron main process (the e2e proves
+// it end-to-end). Here we mock it to prove safeStorageBackend delegates 1:1.
+const { safeStorageMock } = vi.hoisted(() => ({
+  safeStorageMock: {
+    isEncryptionAvailable: vi.fn((): boolean => true),
+    encryptString: vi.fn((plaintext: string): Buffer => Buffer.from(`enc:${plaintext}`, "utf8")),
+    decryptString: vi.fn((cipher: Buffer): string => cipher.toString("utf8").replace("enc:", "")),
+  },
+}));
+vi.mock("electron", () => ({ safeStorage: safeStorageMock }));
+
+const { fileSecretStorage, safeStorageBackend } = await import("./secrets.js");
+
+describe("safeStorageBackend", () => {
+  it("delegates availability, encryption, and decryption to Electron safeStorage", () => {
+    const backend = safeStorageBackend();
+    expect(backend.isEncryptionAvailable()).toBe(true);
+    const cipher = backend.encryptString("plaintext-value");
+    expect(safeStorageMock.encryptString).toHaveBeenCalledWith("plaintext-value");
+    expect(cipher.toString("utf8")).toBe("enc:plaintext-value");
+    expect(backend.decryptString(cipher)).toBe("plaintext-value");
+  });
+});
 
 describe("fileSecretStorage", () => {
   it("writes, reads, and removes ciphertext blobs under the secrets dir", () => {
