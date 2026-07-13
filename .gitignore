@@ -45,6 +45,8 @@ __pycache__/
 # Logs
 logs/
 *.log
+# ...but synthetic journal fixtures are committed test data, not runtime logs.
+!packages/core/test/fixtures/**/*.log
 
 # OS / editor noise
 .DS_Store

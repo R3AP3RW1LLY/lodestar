@@ -1,0 +1,15 @@
+{"timestamp":"2025-06-01T12:10:00Z","event":"Fileheader","part":2,"language":"English/UK","Odyssey":true,"gameversion":"4.0.0.1900","build":"r308767/r0 "}
+{"timestamp":"2025-06-01T12:10:01Z","event":"LoadGame","Commander":"CMDR_LODESTAR_FIXTURE","FID":"F0000000","Ship":"python","ShipName":"LODESTAR TEST","ShipIdent":"LS-01","GameMode":"Solo","StartLanded":false,"StartDead":false,"FuelLevel":29.89,"FuelCapacity":32.0}
+{"timestamp":"2025-06-01T12:10:02Z","event":"Location","StarSystem":"Paesia","SystemAddress":4752151798219,"StarPos":[-13.90625,-6.09375,-6.43750],"Docked":false,"Body":"Paesia 2 A Ring","BodyType":"PlanetaryRing"}
+{"timestamp":"2025-06-01T12:10:30Z","event":"Cargo","Vessel":"Ship","Count":13,"Inventory":[{"Name":"painite","Count":3,"Stolen":0},{"Name":"drones","Name_Localised":"Limpets","Count":10,"Stolen":0}]}
+{"timestamp":"2025-06-01T12:10:45Z","event":"LaunchDrone","Type":"Prospector"}
+{"timestamp":"2025-06-01T12:11:00Z","event":"MiningRefined","Type":"$painite_name;","Type_Localised":"Painite"}
+{"timestamp":"2025-06-01T12:12:00Z","event":"MiningRefined","Type":"$painite_name;","Type_Localised":"Painite"}
+{"timestamp":"2025-06-01T12:13:00Z","event":"Cargo","Vessel":"Ship","Count":15,"Inventory":[{"Name":"painite","Count":5,"Stolen":0},{"Name":"drones","Name_Localised":"Limpets","Count":10,"Stolen":0}]}
+{"timestamp":"2025-06-01T12:15:00Z","event":"FSDJump","StarSystem":"LTT 15574","SystemAddress":10477373803,"StarPos":[75.28125,49.71875,15.87500],"JumpDist":15.22,"FuelUsed":1.83,"FuelLevel":28.06}
+{"timestamp":"2025-06-01T12:16:00Z","event":"SupercruiseEntry","Taxi":false,"Multicrew":false,"StarSystem":"LTT 15574","SystemAddress":10477373803}
+{"timestamp":"2025-06-01T12:17:00Z","event":"SupercruiseExit","Taxi":false,"Multicrew":false,"StarSystem":"LTT 15574","SystemAddress":10477373803,"Body":"Yurchikhin Terminal","BodyType":"Station"}
+{"timestamp":"2025-06-01T12:18:00Z","event":"Docked","StationName":"Yurchikhin Terminal","StationType":"Coriolis","StarSystem":"LTT 15574","SystemAddress":10477373803,"MarketID":3229372160,"DistFromStarLS":123.45,"LandingPads":{"Small":9,"Medium":18,"Large":9}}
+{"timestamp":"2025-06-01T12:18:30Z","event":"MarketSell","MarketID":3229372160,"Type":"painite","Count":5,"SellPrice":500000,"TotalSale":2500000,"AvgPricePaid":0}
+{"timestamp":"2025-06-01T12:19:00Z","event":"MarketBuy","MarketID":3229372160,"Type":"drones","Count":20,"BuyPrice":101,"TotalCost":2020}
+{"timestamp":"2025-06-01T12:20:00Z","event":"Undocked","StationName":"Yurchikhin Terminal","MarketID":3229372160}

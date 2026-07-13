@@ -1,0 +1,2 @@
+﻿{"timestamp":"2025-06-01T12:00:00Z","event":"MiningRefined","Type":"$painite_name;","Type_Localised":"Painite"}
+{"timestamp":"2025-06-01T12:00:01Z","event":"Cargo","Vessel":"Ship","Count":10,"Inventory":[{"Name":"painite","Count":10,"Stolen":0}]}

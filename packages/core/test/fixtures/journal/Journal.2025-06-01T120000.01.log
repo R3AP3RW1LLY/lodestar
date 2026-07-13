@@ -1,0 +1,20 @@
+{"timestamp":"2025-06-01T12:00:00Z","event":"Fileheader","part":1,"language":"English/UK","Odyssey":true,"gameversion":"4.0.0.1900","build":"r308767/r0 "}
+{"timestamp":"2025-06-01T12:00:01Z","event":"LoadGame","Commander":"CMDR_LODESTAR_FIXTURE","FID":"F0000000","Ship":"python","ShipName":"LODESTAR TEST","ShipIdent":"LS-01","GameMode":"Solo","StartLanded":false,"StartDead":false,"FuelLevel":32.0,"FuelCapacity":32.0}
+{"timestamp":"2025-06-01T12:00:02Z","event":"Loadout","Ship":"python","ShipName":"LODESTAR TEST","ShipIdent":"LS-01","CargoCapacity":256,"MaxJumpRange":22.55,"Modules":[{"Slot":"MediumHardpoint1","Item":"hpt_mining_abrblstr_fixed_medium"},{"Slot":"MediumHardpoint2","Item":"hpt_mining_seismchrgwarhd_fixed_medium"},{"Slot":"Slot01_Size6","Item":"int_cargorack_size6_class1"},{"Slot":"Slot02_Size6","Item":"int_refinery_size4_class5"}]}
+{"timestamp":"2025-06-01T12:00:03Z","event":"Music","MusicTrack":"Exploration"}
+{"timestamp":"2025-06-01T12:00:05Z","event":"Location","StarSystem":"Deciat","SystemAddress":6681123623626,"StarPos":[122.62500,-0.81250,-47.28125],"Docked":false,"Body":"Deciat","BodyType":"Star"}
+{"timestamp":"2025-06-01T12:01:00Z","event":"FSDJump","StarSystem":"Paesia","SystemAddress":4752151798219,"StarPos":[-13.90625,-6.09375,-6.43750],"JumpDist":18.34,"FuelUsed":2.11,"FuelLevel":29.89}
+{"timestamp":"2025-06-01T12:02:00Z","event":"SupercruiseEntry","Taxi":false,"Multicrew":false,"StarSystem":"Paesia","SystemAddress":4752151798219}
+{"timestamp":"2025-06-01T12:03:00Z","event":"Scan","ScanType":"Detailed","BodyName":"Paesia 2","BodyID":8,"SystemAddress":4752151798219,"ReserveLevel":"PristineResources","Rings":[{"Name":"Paesia 2 A Ring","RingClass":"eRingClass_Metalic","MassMT":12000000000,"InnerRad":130000000,"OuterRad":320000000}]}
+{"timestamp":"2025-06-01T12:03:30Z","event":"SAASignalsFound","BodyName":"Paesia 2 A Ring","SystemAddress":4752151798219,"BodyID":15,"Signals":[{"Type":"painite","Type_Localised":"Painite","Count":2},{"Type":"platinum","Type_Localised":"Platinum","Count":1},{"Type":"$SAA_SignalType_Geological;","Type_Localised":"Geological","Count":5}],"Genuses":[]}
+{"timestamp":"2025-06-01T12:04:00Z","event":"SupercruiseExit","Taxi":false,"Multicrew":false,"StarSystem":"Paesia","SystemAddress":4752151798219,"Body":"Paesia 2 A Ring","BodyType":"PlanetaryRing"}
+{"timestamp":"2025-06-01T12:05:00Z","event":"LaunchDrone","Type":"Prospector"}
+{"timestamp":"2025-06-01T12:05:10Z","event":"ProspectedAsteroid","Materials":[{"Name":"painite","Proportion":24.53125},{"Name":"platinum","Proportion":8.10000}],"Content":"$AsteroidMaterialContent_High;","Content_Localised":"Material Content: High","Remaining":100.0,"MotherlodeMaterial":"painite"}
+{"timestamp":"2025-06-01T12:05:30Z","event":"ProspectedAsteroid","Materials":[{"Name":"rutile","Proportion":3.21000}],"Content":"$AsteroidMaterialContent_Low;","Content_Localised":"Material Content: Low","Remaining":100.0}
+{"timestamp":"2025-06-01T12:06:00Z","event":"AsteroidCracked","Body":"Paesia 2 A Ring"}
+{"timestamp":"2025-06-01T12:06:30Z","event":"LaunchDrone","Type":"Collection"}
+{"timestamp":"2025-06-01T12:07:00Z","event":"MiningRefined","Type":"$painite_name;","Type_Localised":"Painite"}
+{"timestamp":"2025-06-01T12:07:30Z","event":"MiningRefined","Type":"$painite_name;","Type_Localised":"Painite"}
+{"timestamp":"2025-06-01T12:08:00Z","event":"Cargo","Vessel":"Ship","Count":12,"Inventory":[{"Name":"painite","Count":2,"Stolen":0},{"Name":"drones","Name_Localised":"Limpets","Count":10,"Stolen":0}]}
+{"timestamp":"2025-06-01T12:09:00Z","event":"MiningRefined","Type":"$painite_name;","Type_Localised":"Painite"}
+{"timestamp":"2025-06-01T12:09:30Z","event":"Cargo","Vessel":"Ship","Count":13,"Inventory":[{"Name":"painite","Count":3,"Stolen":0},{"Name":"drones","Name_Localised":"Limpets","Count":10,"Stolen":0}]}

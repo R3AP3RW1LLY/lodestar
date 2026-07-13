@@ -1,0 +1,8 @@
+{"timestamp":"2025-06-01T14:00:00Z","event":"Fileheader","part":1,"language":"English/UK","Odyssey":true,"gameversion":"4.0.0.1900","build":"r308767/r0 "}
+{"timestamp":"2025-06-01T14:00:01Z","event":"CarrierStats","CarrierID":3700000000,"Callsign":"L0D-357","Name":"LODESTAR FIXTURE CARRIER","DockingAccess":"all","AllowNotorious":false,"FuelLevel":500,"JumpRangeCurr":500.0,"JumpRangeMax":500.0,"PendingDecommission":false}
+{"timestamp":"2025-06-01T14:01:00Z","event":"CarrierJumpRequest","CarrierID":3700000000,"SystemName":"HIP 22460","SystemAddress":560292929315,"Body":"HIP 22460","BodyID":0,"DepartureTime":"2025-06-01T14:16:00Z"}
+{"timestamp":"2025-06-01T14:16:05Z","event":"CarrierJump","CarrierID":3700000000,"SystemName":"HIP 22460","SystemAddress":560292929315,"Body":"HIP 22460","BodyID":0}
+{"timestamp":"2025-06-01T14:20:00Z","event":"CarrierJumpCancelled","CarrierID":3700000000}
+{"timestamp":"2025-06-01T14:21:00Z","event":"CarrierTradeOrder","CarrierID":3700000000,"BlackMarket":false,"Commodity":"tritium","Commodity_Localised":"Tritium","PurchaseOrder":1000,"Price":50000}
+{"timestamp":"2025-06-01T14:22:00Z","event":"CarrierDepositFuel","CarrierID":3700000000,"Amount":150,"Total":650}
+{"timestamp":"2025-06-01T14:23:00Z","event":"CargoTransfer","Transfers":[{"Type":"painite","Count":4,"Direction":"tocarrier"},{"Type":"drones","Count":50,"Direction":"toship"}]}
