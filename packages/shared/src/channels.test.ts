@@ -9,8 +9,11 @@ describe("IPC channels", () => {
       "journal.autodetect",
       "secrets.presence",
       "secrets.set",
+      "session.stats",
       "settings.get",
       "settings.set",
+      "state.delta",
+      "state.snapshot",
       "system.gpus",
     ]);
   });

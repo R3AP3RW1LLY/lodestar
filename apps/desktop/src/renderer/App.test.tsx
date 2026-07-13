@@ -30,6 +30,9 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
       .fn()
       .mockResolvedValue({ inaraApiKey: false, capiTokens: false, discordWebhookUrl: false }),
     listGpus: vi.fn().mockResolvedValue([]),
+    getStateSnapshot: vi.fn(),
+    onStateDelta: vi.fn(() => () => {}),
+    onSessionStats: vi.fn(() => () => {}),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;

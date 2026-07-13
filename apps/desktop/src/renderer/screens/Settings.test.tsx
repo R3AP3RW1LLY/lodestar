@@ -27,6 +27,9 @@ function stubApi(over: Partial<LodestarApi> = {}): LodestarApi {
     getSecretsPresence: vi.fn().mockResolvedValue(BASE_PRESENCE),
     setSecret: vi.fn().mockResolvedValue(BASE_PRESENCE),
     listGpus: vi.fn().mockResolvedValue([]),
+    getStateSnapshot: vi.fn(),
+    onStateDelta: vi.fn(() => () => {}),
+    onSessionStats: vi.fn(() => () => {}),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;

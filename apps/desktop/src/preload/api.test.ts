@@ -1,9 +1,26 @@
 import { describe, expect, it, vi } from "vitest";
+import { envelope } from "@lodestar/shared";
 import { createLodestarApi, EXPOSED_API_KEYS } from "./api.js";
+import type { IpcInvoker } from "./api.js";
+
+/** A push port that records subscriptions and lets a test emit to a channel. */
+function fakePush() {
+  const listeners = new Map<string, Set<(m: unknown) => void>>();
+  const on: IpcInvoker["on"] = (channel, listener) => {
+    const set = listeners.get(channel) ?? new Set();
+    set.add(listener);
+    listeners.set(channel, set);
+    return () => set.delete(listener);
+  };
+  const emit = (channel: string, message: unknown): void => {
+    for (const l of listeners.get(channel) ?? []) l(message);
+  };
+  return { on, emit };
+}
 
 describe("preload API surface", () => {
   it("exposes only the whitelisted, typed methods — no raw ipcRenderer", () => {
-    const api = createLodestarApi({ invoke: vi.fn() });
+    const api = createLodestarApi({ invoke: vi.fn(), on: vi.fn(() => () => {}) });
     expect(Object.keys(api).sort()).toEqual([...EXPOSED_API_KEYS].sort());
     for (const value of Object.values(api)) {
       expect(typeof value).toBe("function");
@@ -19,10 +36,43 @@ describe("preload API surface", () => {
       ok: true,
       value: { version: "0.1.0", dbStatus: "ok", journalStatus: "not-configured" },
     });
-    const api = createLodestarApi({ invoke });
+    const api = createLodestarApi({ invoke, on: vi.fn(() => () => {}) });
     const health = await api.getHealth();
     expect(invoke).toHaveBeenCalledWith("app.health");
     expect(health.version).toBe("0.1.0");
+  });
+
+  it("getStateSnapshot invokes state.snapshot and unwraps the root state", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true, value: { activity: "mining" } });
+    const api = createLodestarApi({ invoke, on: vi.fn(() => () => {}) });
+    expect(await api.getStateSnapshot()).toEqual({ activity: "mining" });
+    expect(invoke).toHaveBeenCalledWith("state.snapshot");
+  });
+
+  it("onStateDelta delivers only valid state.delta envelope payloads and unsubscribes", () => {
+    const push = fakePush();
+    const api = createLodestarApi({ invoke: vi.fn(), on: push.on });
+    const seen: unknown[] = [];
+    const off = api.onStateDelta((d) => seen.push(d));
+
+    push.emit("state.delta", envelope("state.delta", { activity: "mining" }));
+    push.emit("state.delta", { not: "an envelope" }); // dropped
+    push.emit("state.delta", envelope("session.stats", null)); // wrong channel → dropped
+    push.emit("state.delta", { v: 1, ts: "t", channel: "state.delta", payload: 42 }); // non-object payload → dropped
+    expect(seen).toEqual([{ activity: "mining" }]);
+
+    off();
+    push.emit("state.delta", envelope("state.delta", { activity: "docked" }));
+    expect(seen).toEqual([{ activity: "mining" }]); // no further delivery
+  });
+
+  it("onSessionStats delivers session.stats payloads (including null)", () => {
+    const push = fakePush();
+    const api = createLodestarApi({ invoke: vi.fn(), on: push.on });
+    const seen: unknown[] = [];
+    api.onSessionStats((s) => seen.push(s));
+    push.emit("session.stats", envelope("session.stats", null));
+    expect(seen).toEqual([null]);
   });
 
   it("getHealth throws a typed error when the main process returns an error envelope", async () => {
@@ -34,7 +84,7 @@ describe("preload API surface", () => {
         causeChain: ["health.failed: probe failed"],
       },
     });
-    const api = createLodestarApi({ invoke });
+    const api = createLodestarApi({ invoke, on: vi.fn(() => () => {}) });
     await expect(api.getHealth()).rejects.toThrow("probe failed");
   });
 
@@ -50,7 +100,7 @@ describe("preload API surface", () => {
       };
       return Promise.resolve({ ok: true, value: value[channel] });
     });
-    const api = createLodestarApi({ invoke });
+    const api = createLodestarApi({ invoke, on: vi.fn(() => () => {}) });
 
     expect(await api.getSettings()).toEqual({ journalPath: null });
     expect(invoke).toHaveBeenCalledWith("settings.get");

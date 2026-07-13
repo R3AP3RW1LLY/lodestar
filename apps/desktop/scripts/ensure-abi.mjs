@@ -46,7 +46,13 @@ console.log(
 rmSync(join(moduleDir, "build"), { recursive: true, force: true });
 
 if (target === "electron") {
-  execSync("pnpm exec electron-rebuild -f -w better-sqlite3", { stdio: "inherit" });
+  // Run from the desktop package dir, where @electron/rebuild is a direct devDep
+  // (its bin is linked there regardless of whether pnpm hoists it to the root).
+  const desktopDir = join(import.meta.dirname, "..");
+  execSync("pnpm exec electron-rebuild -f -w better-sqlite3", {
+    stdio: "inherit",
+    cwd: desktopDir,
+  });
 } else {
   // Run better-sqlite3's own install script (prebuild-install || node-gyp) in
   // its dir — pnpm rebuild is unreliable here, this restores the Node prebuild.

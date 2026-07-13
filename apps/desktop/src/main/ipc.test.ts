@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import type { ElectronIpcMain, IpcMainLike } from "./ipc.js";
-import type { AppHealth, WireResult } from "@lodestar/shared";
+import type { AppHealth, RootState, WireResult } from "@lodestar/shared";
+import { initialRootState } from "@lodestar/shared";
 
 interface FakeIpcMain extends IpcMainLike {
   readonly handlers: Map<string, (...args: unknown[]) => unknown>;
@@ -37,12 +38,13 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     getSecretsPresence: () => PRESENCE,
     setSecret: () => ({ ok: true as const, value: PRESENCE }),
     listGpus: () => Promise.resolve([]),
+    subscribeState: () => initialRootState(),
     ...over,
   };
 }
 
 describe("registerIpcHandlers", () => {
-  it("registers exactly the Phase-0.7 channels", () => {
+  it("registers exactly the invoke channels through Step 1.9", () => {
     const ipc = fakeIpcMain();
     registerIpcHandlers(ipc, deps());
     expect([...ipc.handlers.keys()].sort()).toEqual([
@@ -52,8 +54,19 @@ describe("registerIpcHandlers", () => {
       "secrets.set",
       "settings.get",
       "settings.set",
+      "state.snapshot",
       "system.gpus",
     ]);
+  });
+
+  it("state.snapshot returns the current root state in a success envelope", async () => {
+    const ipc = fakeIpcMain();
+    const snap: RootState = { ...initialRootState(), activity: "mining" };
+    const subscribeState = vi.fn(() => snap);
+    registerIpcHandlers(ipc, deps({ subscribeState }));
+    const result = (await ipc.handlers.get("state.snapshot")?.({})) as WireResult<RootState>;
+    expect(subscribeState).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, value: snap });
   });
 
   it("app.health returns a success wire envelope with the health payload", async () => {

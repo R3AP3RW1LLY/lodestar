@@ -9,6 +9,7 @@ import type {
   AppHealth,
   Channel,
   GpuInfo,
+  RootState,
   SecretsPresence,
   SecretsSetRequest,
   SettingsSetRequest,
@@ -49,6 +50,8 @@ export interface IpcDeps {
   readonly getSecretsPresence: () => SecretsPresence;
   readonly setSecret: (req: SecretsSetRequest) => WireResult<SecretsPresence>;
   readonly listGpus: () => Promise<readonly GpuInfo[]>;
+  /** Renderer subscribed: returns the current full state and re-baselines the delta stream. */
+  readonly subscribeState: () => RootState;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -90,5 +93,9 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
 
   ipcMain.handle("system.gpus", async (): Promise<WireResult<readonly GpuInfo[]>> =>
     toWireResult(ok(await deps.listGpus())),
+  );
+
+  ipcMain.handle("state.snapshot", (): WireResult<RootState> =>
+    toWireResult(ok(deps.subscribeState())),
   );
 }
