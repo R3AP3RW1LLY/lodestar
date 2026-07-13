@@ -182,6 +182,12 @@ importers:
         specifier: workspace:*
         version: link:../shared
 
+  packages/intelligence:
+    dependencies:
+      '@lodestar/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/scripts:
     dependencies:
       typescript:

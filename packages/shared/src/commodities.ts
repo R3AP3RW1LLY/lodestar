@@ -16,9 +16,39 @@
 
 export type MiningMethod = "laser" | "deep-core" | "subsurface";
 
+/**
+ * The canonical commodity ids. A closed const list so `CommodityId` is a compile-
+ * time union — the Step-2.3 threshold matrix keys on it, so a typo'd id fails to
+ * compile. A test pins that COMMODITIES exactly covers this list.
+ */
+export const COMMODITY_IDS = [
+  "platinum",
+  "painite",
+  "osmium",
+  "palladium",
+  "gold",
+  "silver",
+  "bertrandite",
+  "indite",
+  "gallite",
+  "bromellite",
+  "lowtemperaturediamond",
+  "tritium",
+  "opal",
+  "alexandrite",
+  "benitoite",
+  "musgravite",
+  "serendibite",
+  "grandidierite",
+  "monazite",
+  "rhodplumsite",
+] as const;
+
+export type CommodityId = (typeof COMMODITY_IDS)[number];
+
 export interface Commodity {
   /** Canonical id = journal internal name, lowercased. */
-  readonly id: string;
+  readonly id: CommodityId;
   /** `ProspectedAsteroid.Materials[].Name` (PascalCase internal name). */
   readonly internalName: string;
   /** `MiningRefined.Type` / `Market.json` symbol, e.g. "$painite_name;". */
@@ -44,7 +74,7 @@ function c(
   methods: readonly MiningMethod[],
   over: { readonly eddnName?: string; readonly inaraName?: string } = {},
 ): Commodity {
-  const id = internalName.toLowerCase();
+  const id = internalName.toLowerCase() as CommodityId;
   return {
     id,
     internalName,
@@ -87,8 +117,10 @@ export const COMMODITIES: readonly Commodity[] = [
   c("Rhodplumsite", "Rhodplumsite", ["deep-core"]),
 ];
 
-const byIdIndex = new Map(COMMODITIES.map((x) => [x.id, x]));
-const byEddnIndex = new Map(COMMODITIES.map((x) => [x.eddnName.toLowerCase(), x]));
+const byIdIndex = new Map<string, Commodity>(COMMODITIES.map((x) => [x.id, x]));
+const byEddnIndex = new Map<string, Commodity>(
+  COMMODITIES.map((x) => [x.eddnName.toLowerCase(), x]),
+);
 
 /** Strip a "$..._name;" wrapper and trim+lowercase — the internal-scheme key. */
 function internalKey(raw: string): string {

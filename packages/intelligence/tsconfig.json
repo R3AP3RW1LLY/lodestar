@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // `@types/node` is needed to type-check the @lodestar/shared SOURCE this pkg
+    // consumes (it uses `URL` etc.). Purity is enforced by the dependency-direction
+    // checker (scans imports for node builtins) + the "intelligence is pure" rule,
+    // not by withholding these ambient types (which only breaks the shared build).
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -10,6 +10,8 @@ export type {
   SecretStorage,
 } from "./settings/secrets.js";
 export { createSecretsStore } from "./settings/secrets.js";
+export type { ThresholdOverride, ThresholdOverridesStore } from "./settings/threshold-overrides.js";
+export { createThresholdOverridesStore } from "./settings/threshold-overrides.js";
 export {
   parseStatus,
   decodeStatusFlags,
