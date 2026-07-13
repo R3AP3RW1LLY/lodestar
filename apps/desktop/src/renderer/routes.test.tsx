@@ -5,10 +5,14 @@ import "@testing-library/jest-dom/vitest";
 import { MODULE_SCREENS, ModuleView } from "./routes.js";
 import { MODULES } from "./modules.js";
 
-// The Settings screen touches window.lodestar on mount; provide a minimal fake.
+// Settings + Command Deck touch window.lodestar on mount; provide a minimal fake.
 (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = {
   getSettings: vi.fn().mockResolvedValue({}),
   getSecretsPresence: vi.fn().mockResolvedValue({}),
+  getHealth: vi.fn().mockResolvedValue({ version: "0", dbStatus: "ok", journalStatus: "ok" }),
+  getStateSnapshot: vi.fn(() => new Promise(() => {})),
+  onStateDelta: vi.fn(() => () => {}),
+  onSessionStats: vi.fn(() => () => {}),
 };
 
 afterEach(cleanup);

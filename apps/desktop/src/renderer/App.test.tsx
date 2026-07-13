@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { App } from "./App.js";
 import type { LodestarApi } from "../preload/api.js";
+import type { RootState } from "@lodestar/shared";
 
 const BASE_SETTINGS = {
   journalPath: null,
@@ -30,7 +31,7 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
       .fn()
       .mockResolvedValue({ inaraApiKey: false, capiTokens: false, discordWebhookUrl: false }),
     listGpus: vi.fn().mockResolvedValue([]),
-    getStateSnapshot: vi.fn(),
+    getStateSnapshot: vi.fn((): Promise<RootState> => new Promise(() => {})),
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
     ...over,

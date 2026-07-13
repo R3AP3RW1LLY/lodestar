@@ -39,6 +39,7 @@
     "autoprefixer": "^10.5.2",
     "electron": "^39.2.4",
     "electron-vite": "^4.0.1",
+    "framer-motion": "^12.42.2",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.17",
     "react": "^19.2.0",
