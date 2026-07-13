@@ -1,12 +1,17 @@
 /**
  * IPC channel contracts (SSOT §5.6). The Channel union is CLOSED — it grows
  * only when a phase's step adds a channel here together with its payload type.
- * Phase 0 defines: app.health.
+ * Phase 0 defines app.health + settings/secrets/system; Step 1.9 adds the live
+ * telemetry push channels state.snapshot / state.delta / session.stats.
  *
  * CHANNEL_SET is validated in BOTH directions at compile time: a payload type
  * without a CHANNEL_SET entry and a CHANNEL_SET entry without a payload type
  * are each compile errors.
  */
+
+import type { RootState } from "./state.js";
+import type { StateDelta } from "./state-delta.js";
+import type { SessionSummary } from "./session.js";
 
 export interface AppHealth {
   readonly version: string;
@@ -58,6 +63,11 @@ export interface ChannelPayloads {
   readonly "secrets.presence": SecretsPresence;
   readonly "secrets.set": SecretsPresence;
   readonly "system.gpus": readonly GpuInfo[];
+  // Step 1.9 — live telemetry. `state.snapshot` is the full state (invoke, on
+  // subscribe); `state.delta` + `session.stats` are push-only (main→renderer).
+  readonly "state.snapshot": RootState;
+  readonly "state.delta": StateDelta;
+  readonly "session.stats": SessionSummary | null;
 }
 
 const CHANNEL_SET = {
@@ -68,6 +78,9 @@ const CHANNEL_SET = {
   "secrets.presence": true,
   "secrets.set": true,
   "system.gpus": true,
+  "state.snapshot": true,
+  "state.delta": true,
+  "session.stats": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

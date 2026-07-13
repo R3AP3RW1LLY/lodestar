@@ -14,11 +14,24 @@ export interface BridgeHost {
 
 export interface InvokeHost {
   invoke: (channel: string, ...args: unknown[]) => Promise<unknown>;
+  on: (channel: string, listener: (event: unknown, ...args: unknown[]) => void) => void;
+  removeListener: (channel: string, listener: (event: unknown, ...args: unknown[]) => void) => void;
 }
 
 export function installBridge(bridge: BridgeHost, invoker: InvokeHost): void {
   const api = createLodestarApi({
     invoke: (channel, ...args) => invoker.invoke(channel, ...args),
+    on: (channel, listener) => {
+      // Strip the IpcRendererEvent at the boundary; the renderer callback only
+      // ever sees the message payload (the pushed envelope).
+      const handler = (_event: unknown, message: unknown): void => {
+        listener(message);
+      };
+      invoker.on(channel, handler);
+      return () => {
+        invoker.removeListener(channel, handler);
+      };
+    },
   });
   bridge.exposeInMainWorld("lodestar", api);
 }

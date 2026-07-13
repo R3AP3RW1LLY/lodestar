@@ -5,7 +5,7 @@ import { EXPOSED_API_KEYS } from "./api.js";
 describe("installBridge", () => {
   it("exposes exactly one world key, 'lodestar', and nothing else (no raw ipcRenderer)", () => {
     const exposeInMainWorld = vi.fn();
-    installBridge({ exposeInMainWorld }, { invoke: vi.fn() });
+    installBridge({ exposeInMainWorld }, { invoke: vi.fn(), on: vi.fn(), removeListener: vi.fn() });
     expect(exposeInMainWorld).toHaveBeenCalledOnce();
     const call = exposeInMainWorld.mock.calls[0];
     expect(call?.[0]).toBe("lodestar");
@@ -21,7 +21,7 @@ describe("installBridge", () => {
       ok: true,
       value: { version: "0.1.0", dbStatus: "ok", journalStatus: "ok" },
     });
-    installBridge({ exposeInMainWorld }, { invoke });
+    installBridge({ exposeInMainWorld }, { invoke, on: vi.fn(), removeListener: vi.fn() });
     await capturedApi?.getHealth();
     expect(invoke).toHaveBeenCalledWith("app.health");
   });

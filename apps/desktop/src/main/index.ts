@@ -8,13 +8,23 @@
 import { app, dialog, ipcMain, BrowserWindow } from "electron";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { randomBytes } from "node:crypto";
 import { APP_VERSION } from "@lodestar/shared";
 import type { Logger } from "@lodestar/shared";
-import { createDbService, createSettingsService, createSecretsStore } from "@lodestar/core";
+import {
+  createDbService,
+  createSettingsService,
+  createSecretsStore,
+  createLiveEngine,
+  createSessionRepository,
+} from "@lodestar/core";
 import type { DbService } from "@lodestar/core";
 import { safeStorageBackend, fileSecretStorage } from "./secrets.js";
 import { createSettingsBridge } from "./settings-bridge.js";
 import type { SettingsBridge } from "./settings-bridge.js";
+import { createStateBridge } from "./state-bridge.js";
+import { createWsPushServer } from "./ws-server.js";
+import type { WsPushServer } from "./ws-server.js";
 import { listGpus } from "./gpu.js";
 import { acquireSingleInstance } from "./app-lifecycle.js";
 import { createMainWindow } from "./windows.js";
@@ -27,6 +37,22 @@ let mainWindow: BrowserWindow | undefined;
 let logger: Logger | undefined;
 let dbService: DbService | undefined;
 let bridge: SettingsBridge | undefined;
+let wsServer: WsPushServer | undefined;
+
+/**
+ * Where the live engine watches: an explicit override (used by e2e + power users
+ * to point at a non-default journal location), else the configured journal dir,
+ * else the default location. Read-only — resolving the watch dir must NOT persist
+ * a journal path (that is the Settings screen's job); the health probe stays
+ * "not-configured" until the user configures it. Mirrors `LODESTAR_DATA_DIR`.
+ */
+function resolveJournalDir(settings: SettingsBridge): string {
+  const override = process.env["LODESTAR_JOURNAL_DIR"];
+  if (override !== undefined && override !== "") return override;
+  const configured = settings.getSettings().journalPath;
+  if (configured !== null) return configured;
+  return JOURNAL_CANDIDATES()[0] ?? "";
+}
 
 const JOURNAL_CANDIDATES = (): string[] => {
   const home = process.env["USERPROFILE"] ?? app.getPath("home");
@@ -121,6 +147,38 @@ async function bootstrap(): Promise<void> {
   }
 
   const activeBridge = bridge;
+  const log = logger;
+
+  // Live telemetry pipeline (Step 1.9): the engine folds the journal into a live
+  // RootState + session summary; the state bridge pushes it to the renderer and
+  // the loopback WS server (overlay, Step 2.10). Engine survives a missing dir —
+  // the watcher just finds nothing until the journal path is configured.
+  const repository =
+    dbService.status() === "ok" ? createSessionRepository(dbService.db) : undefined;
+  const engine = createLiveEngine({
+    dir: resolveJournalDir(activeBridge),
+    logger: log,
+    ...(repository !== undefined ? { repository } : {}),
+  });
+
+  const wsToken = randomBytes(32).toString("hex");
+  wsServer = await createWsPushServer({ token: wsToken, logger: log });
+  const ws = wsServer;
+
+  mainWindow = createMainWindow();
+  const window = mainWindow;
+
+  const stateBridge = createStateBridge({
+    engine,
+    send: (env) => {
+      if (!window.isDestroyed()) window.webContents.send(env.channel, env);
+      ws.broadcast(env);
+    },
+    onError: (error) => {
+      log.warn("state-bridge.send-failed", { error: String(error) });
+    },
+  });
+
   registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
@@ -134,12 +192,17 @@ async function bootstrap(): Promise<void> {
     getSecretsPresence: () => activeBridge.secretsPresence(),
     setSecret: (req) => activeBridge.setSecret(req),
     listGpus,
+    subscribeState: () => stateBridge.snapshot(),
   });
 
+  engine.start();
+
   app.on("will-quit", () => {
+    engine.stop();
+    stateBridge.stop();
+    void ws.close();
     dbService?.close();
   });
 
-  mainWindow = createMainWindow();
-  logger.info("main.ready");
+  log.info("main.ready", { wsPort: ws.port });
 }

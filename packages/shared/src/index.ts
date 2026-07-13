@@ -82,4 +82,6 @@ export type {
   StateInput,
 } from "./state.js";
 export { initialRootState } from "./state.js";
+export type { StateDelta } from "./state-delta.js";
+export { diffRootState, applyStateDelta, deepEqual } from "./state-delta.js";
 export type { SessionSummary } from "./session.js";
