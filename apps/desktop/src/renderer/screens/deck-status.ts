@@ -31,8 +31,12 @@ export interface DeckStatusInput {
 }
 
 export function deriveDeckStatus(input: DeckStatusInput): DeckStatus {
-  if (input.journalConfigured === false) return { mode: "not-configured" };
-  if (input.timestamp === undefined) return { mode: "offline" };
+  // "Not configured" is only for a genuinely fresh setup — no journal path AND no
+  // data has ever arrived. Once telemetry flows (a timestamp exists), show the
+  // deck even if settings has no path yet (e.g. the LODESTAR_JOURNAL_DIR override).
+  if (input.timestamp === undefined) {
+    return input.journalConfigured === false ? { mode: "not-configured" } : { mode: "offline" };
+  }
   const ts = Date.parse(input.timestamp);
   if (Number.isNaN(ts)) return { mode: "offline", timestamp: input.timestamp };
   const window = input.onlineWindowMs ?? ONLINE_WINDOW_MS;

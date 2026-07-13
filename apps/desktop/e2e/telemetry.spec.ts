@@ -1,20 +1,29 @@
 import { test, expect, _electron as electron } from "@playwright/test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ElectronApplication } from "@playwright/test";
 
 const APP_ENTRY = join(import.meta.dirname, "..", "out", "main", "index.cjs");
+const JOURNAL = "Journal.2025-06-01T120000.01.log";
 
-// A minimal mining session written into the watched journal dir AFTER launch, so
-// the live engine picks it up, folds it, and the state bridge pushes the result.
-const JOURNAL_LINES = [
-  `{"timestamp":"2025-06-01T12:00:00Z","event":"LoadGame","Commander":"CMDR_E2E","FID":"F0","Ship":"python","ShipName":"S"}`,
-  `{"timestamp":"2025-06-01T12:00:05Z","event":"SupercruiseExit","StarSystem":"Paesia","Body":"Paesia 2 A Ring","BodyType":"PlanetaryRing"}`,
-  `{"timestamp":"2025-06-01T12:00:10Z","event":"LaunchDrone","Type":"Prospector"}`,
-  `{"timestamp":"2025-06-01T12:01:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
-  `{"timestamp":"2025-06-01T12:02:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
-];
+// An active mining session: python at a ring, 2t painite refined, hold known.
+const INITIAL =
+  [
+    `{"timestamp":"2025-06-01T12:00:00Z","event":"LoadGame","Commander":"CMDR_E2E","FID":"F0","Ship":"python","ShipName":"S"}`,
+    `{"timestamp":"2025-06-01T12:00:05Z","event":"SupercruiseExit","StarSystem":"Paesia","Body":"Paesia 2 A Ring","BodyType":"PlanetaryRing"}`,
+    `{"timestamp":"2025-06-01T12:00:10Z","event":"LaunchDrone","Type":"Prospector"}`,
+    `{"timestamp":"2025-06-01T12:01:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+    `{"timestamp":"2025-06-01T12:02:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+    `{"timestamp":"2025-06-01T12:03:00Z","event":"Cargo","Vessel":"Ship","Count":2,"Inventory":[{"Name":"painite","Count":2,"Stolen":0}]}`,
+  ].join("\n") + "\n";
+
+// Live continuation: dock at a station and sell the hold → the session ends.
+const CONTINUATION =
+  [
+    `{"timestamp":"2025-06-01T12:05:00Z","event":"Docked","StationName":"Coriolis Demo","StationType":"Coriolis","StarSystem":"Paesia","SystemAddress":1,"MarketID":2}`,
+    `{"timestamp":"2025-06-01T12:06:00Z","event":"MarketSell","MarketID":2,"Type":"painite","Count":2,"SellPrice":1,"TotalSale":1000000,"AvgPricePaid":0}`,
+  ].join("\n") + "\n";
 
 let dataDir: string;
 let journalDir: string;
@@ -29,7 +38,7 @@ test.afterEach(() => {
     try {
       rmSync(dir, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
     } catch {
-      // Best-effort teardown — Windows may briefly hold the handle past close.
+      // Best-effort teardown.
     }
   }
 });
@@ -42,64 +51,31 @@ function launch(): Promise<ElectronApplication> {
 }
 
 /**
- * Phase-1 acceptance: "main emits → renderer store updates." This drives the REAL
- * IPC + WS state bridge: the renderer subscribes (getStateSnapshot + push
- * listeners), a journal file is written into the watched dir, and the renderer
- * observes the throttled session.stats / state.delta pushes reflect the mining.
+ * Phase-1 acceptance: main emits → renderer store updates. This drives the REAL
+ * pipeline and observes the REAL Command Deck: the engine folds the journal, the
+ * state bridge pushes snapshot + deltas + session.stats over IPC, the store
+ * applies them, and the panels re-render. The snapshot proves the initial state
+ * reaches the UI; a live journal APPEND proves state.delta (a new station in the
+ * Location panel) and session.stats (active → ended) reach it too.
  */
-test("live journal events flow through the engine and bridge to the renderer", async () => {
+test("live journal telemetry drives the Command Deck panels", async () => {
+  writeFileSync(join(journalDir, JOURNAL), INITIAL);
+
   const app = await launch();
   const win = await app.firstWindow();
 
-  // Attach push listeners and hydrate the baseline BEFORE any journal is written.
-  await win.evaluate(async () => {
-    const w = window as unknown as {
-      lodestar: {
-        getStateSnapshot: () => Promise<unknown>;
-        onStateDelta: (cb: (d: unknown) => void) => void;
-        onSessionStats: (cb: (s: unknown) => void) => void;
-      };
-      __deltas: unknown[];
-      __sessions: unknown[];
-    };
-    w.__deltas = [];
-    w.__sessions = [];
-    w.lodestar.onStateDelta((d) => w.__deltas.push(d));
-    w.lodestar.onSessionStats((s) => w.__sessions.push(s));
-    await w.lodestar.getStateSnapshot();
-  });
+  // Snapshot → UI: the active mining session and its context render.
+  await expect(win.getByTestId("session-status")).toHaveText("active", { timeout: 15000 });
+  await expect(win.getByTestId("activity-value")).toHaveText("Mining");
+  await expect(win.getByText("Paesia", { exact: true })).toBeVisible();
 
-  // Now write the journal — the watcher (100 ms poll) picks it up and the engine
-  // folds it into an active session, which the bridge pushes to the renderer. The
-  // trailing newline matters: the tailer only emits newline-terminated lines (as
-  // the real game always writes), so without it the last event would be withheld.
-  writeFileSync(
-    join(journalDir, "Journal.2025-06-01T120000.01.log"),
-    JOURNAL_LINES.join("\n") + "\n",
-  );
-
-  await win.waitForFunction(
-    () => {
-      const sessions = (window as unknown as { __sessions: { tonsRefined?: number }[] }).__sessions;
-      const last = sessions.at(-1);
-      return last !== undefined && last !== null && (last.tonsRefined ?? 0) >= 2;
-    },
-    undefined,
-    { timeout: 15000 },
-  );
-
-  const result = await win.evaluate(() => {
-    const w = window as unknown as {
-      __deltas: unknown[];
-      __sessions: { tonsRefined: number; active: boolean }[];
-    };
-    return { lastSession: w.__sessions.at(-1), deltaCount: w.__deltas.length };
-  });
+  // Live append → dock + sell. state.delta lands the station in the Location panel;
+  // session.stats flips the session to ended — both pushed over IPC to the store.
+  appendFileSync(join(journalDir, JOURNAL), CONTINUATION);
 
   try {
-    expect(result.lastSession?.tonsRefined).toBe(2);
-    expect(result.lastSession?.active).toBe(true);
-    expect(result.deltaCount).toBeGreaterThan(0); // state deltas flowed too
+    await expect(win.getByText("Coriolis Demo")).toBeVisible({ timeout: 15000 }); // state.delta
+    await expect(win.getByTestId("session-status")).toHaveText("ended", { timeout: 15000 }); // session.stats
   } finally {
     await app.close();
   }

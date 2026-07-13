@@ -4,10 +4,21 @@ import { deriveDeckStatus } from "./deck-status.js";
 const T0 = Date.parse("2025-06-01T12:00:00Z");
 
 describe("deriveDeckStatus", () => {
-  it("is not-configured when there is no journal path (regardless of data)", () => {
+  it("is not-configured only when there is no journal path AND no data yet", () => {
+    expect(deriveDeckStatus({ journalConfigured: false, timestamp: undefined, nowMs: T0 })).toEqual(
+      { mode: "not-configured" },
+    );
+  });
+
+  it("shows the deck (not not-configured) once data flows, even without a settings path", () => {
+    // e.g. the LODESTAR_JOURNAL_DIR override: engine produces data, settings path null.
     expect(
-      deriveDeckStatus({ journalConfigured: false, timestamp: "2025-06-01T12:00:00Z", nowMs: T0 }),
-    ).toEqual({ mode: "not-configured" });
+      deriveDeckStatus({
+        journalConfigured: false,
+        timestamp: "2025-06-01T12:00:00Z",
+        nowMs: T0 + 1_000,
+      }),
+    ).toEqual({ mode: "online", timestamp: "2025-06-01T12:00:00Z" });
   });
 
   it("is offline with no timestamp yet (no fabricated time)", () => {
