@@ -34,3 +34,27 @@ export { CHANNELS, envelope, isEnvelope } from "./channels.js";
 export type { DataAge, DataAgeLevel } from "./data-age.js";
 export { classifyDataAge } from "./data-age.js";
 export { isLoopbackUrl } from "./loopback.js";
+export type {
+  Vec3,
+  ProspectedAsteroidEvent,
+  AsteroidCrackedEvent,
+  MiningRefinedEvent,
+  LaunchDroneEvent,
+  SaaSignalsFoundEvent,
+  ScanEvent,
+  CargoEvent,
+  MarketSellEvent,
+  MarketBuyEvent,
+  DockedEvent,
+  UndockedEvent,
+  FsdJumpEvent,
+  SupercruiseEntryEvent,
+  SupercruiseExitEvent,
+  LocationEvent,
+  LoadGameEvent,
+  LoadoutEvent,
+  MusicEvent,
+  UnknownJournalEvent,
+  ParsedJournalEvent,
+  KnownJournalEventName,
+} from "./journal-events.js";
