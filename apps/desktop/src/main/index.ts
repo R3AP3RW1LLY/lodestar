@@ -9,7 +9,7 @@ import { app, dialog, ipcMain, BrowserWindow } from "electron";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
-import { APP_VERSION } from "@lodestar/shared";
+import { APP_VERSION, envelope } from "@lodestar/shared";
 import type { Logger } from "@lodestar/shared";
 import {
   createDbService,
@@ -33,6 +33,9 @@ import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import { buildHealth } from "./health.js";
 import { createLogger, createRollingDestination } from "./logger.js";
 import { getDataDir, getLogsDir } from "./paths.js";
+import { createTtsService } from "./tts-service.js";
+import { wireAssay } from "./assay-wiring.js";
+import type { AssayWiring } from "./assay-wiring.js";
 
 let mainWindow: BrowserWindow | undefined;
 let logger: Logger | undefined;
@@ -185,6 +188,30 @@ async function bootstrap(): Promise<void> {
     },
   });
 
+  // TTS (Step 2.7b): synthesize verdict callouts + push them to the renderer for
+  // playback. Assay wiring (2.6/2.7b) feeds the engine's prospects through the
+  // verdict engine and hands each verdict to the speech service.
+  const ttsService = createTtsService({
+    dir: join(dataDir, "voices"),
+    settings: () => {
+      const s = activeBridge.getSettings();
+      return { enabled: s.ttsEnabled, voice: s.ttsVoice, volume: s.ttsVolume };
+    },
+    emitAudio: (audio) => {
+      if (!window.isDestroyed()) window.webContents.send("tts.audio", envelope("tts.audio", audio));
+    },
+    logger: log,
+  });
+  let assayWiring: AssayWiring | undefined;
+  if (dbService.status() === "ok") {
+    assayWiring = wireAssay({
+      engine,
+      db: dbService.db,
+      onVerdict: ttsService.onVerdict,
+      logger: log,
+    });
+  }
+
   registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
@@ -199,6 +226,7 @@ async function bootstrap(): Promise<void> {
     setSecret: (req) => activeBridge.setSecret(req),
     listGpus,
     subscribeState: () => stateBridge.snapshot(),
+    testTts: () => ttsService.test(),
   });
 
   engine.start();
@@ -206,6 +234,7 @@ async function bootstrap(): Promise<void> {
   app.on("will-quit", () => {
     engine.stop();
     stateBridge.stop();
+    assayWiring?.dispose();
     void ws.close();
     dbService?.close();
   });

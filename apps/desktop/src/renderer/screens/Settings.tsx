@@ -29,6 +29,7 @@ export function Settings(): React.JSX.Element {
   const [presence, setPresence] = useState<SecretsPresence | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
+  const [ttsNote, setTtsNote] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -49,7 +50,10 @@ export function Settings(): React.JSX.Element {
   );
 
   const save = useCallback(
-    async (key: keyof SettingsSnapshot, value: string | boolean | null): Promise<boolean> => {
+    async (
+      key: keyof SettingsSnapshot,
+      value: string | number | boolean | null,
+    ): Promise<boolean> => {
       setError(null);
       setSavedNote(null);
       try {
@@ -189,6 +193,74 @@ export function Settings(): React.JSX.Element {
           >
             Detect GPUs
           </MfdButton>
+        </div>
+      </MfdPanel>
+
+      <MfdPanel title="Voice (TTS)">
+        <p className="mb-2 text-xs text-cyan-dim">
+          CPU-only Piper callouts for mine verdicts. On first enable the pinned voice (~130&nbsp;MB)
+          downloads to your data dir — hash-verified.
+        </p>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={settings.ttsEnabled}
+            onChange={(e) => {
+              void save("ttsEnabled", e.target.checked);
+            }}
+            aria-label="Enable voice callouts"
+          />
+          <span className="text-orange">Enable mine/skip callouts</span>
+        </label>
+        <div className="mt-2 flex flex-col gap-1">
+          <span className="text-cyan">Voice</span>
+          <span className="text-orange" data-testid="tts-voice">
+            {settings.ttsVoice}
+          </span>
+        </div>
+        <label className="mt-2 flex flex-col gap-1">
+          <span className="text-cyan">Volume {String(Math.round(settings.ttsVolume * 100))}%</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={settings.ttsVolume}
+            onChange={(e) => {
+              update("ttsVolume", Number(e.target.value)); // live visual only
+            }}
+            onPointerUp={(e) => {
+              void save("ttsVolume", Number(e.currentTarget.value)); // persist on release
+            }}
+            onKeyUp={(e) => {
+              void save("ttsVolume", Number(e.currentTarget.value)); // keyboard commit
+            }}
+            aria-label="TTS volume"
+          />
+        </label>
+        <div className="mt-2 flex items-center gap-2">
+          <MfdButton
+            onClick={() => {
+              void (async () => {
+                setTtsNote("synthesizing…");
+                try {
+                  const r = await window.lodestar.testTts();
+                  setTtsNote(
+                    r.ok ? "voice test played" : `voice test failed: ${r.error ?? "unknown"}`,
+                  );
+                } catch (cause) {
+                  setTtsNote(cause instanceof Error ? cause.message : String(cause));
+                }
+              })();
+            }}
+          >
+            Test voice
+          </MfdButton>
+          {ttsNote !== null && (
+            <span data-testid="tts-note" className="text-xs text-cyan-dim">
+              {ttsNote}
+            </span>
+          )}
         </div>
       </MfdPanel>
 

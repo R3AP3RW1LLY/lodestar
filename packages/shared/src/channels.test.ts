@@ -15,6 +15,8 @@ describe("IPC channels", () => {
       "state.delta",
       "state.snapshot",
       "system.gpus",
+      "tts.audio",
+      "tts.test",
     ]);
   });
 

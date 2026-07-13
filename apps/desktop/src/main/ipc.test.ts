@@ -25,6 +25,9 @@ const SNAPSHOT = {
   consentWing: false,
   consentCommunity: false,
   consentDiscord: false,
+  ttsEnabled: false,
+  ttsVoice: "en_US-ryan-high",
+  ttsVolume: 0.8,
 } as const;
 
 const PRESENCE = { inaraApiKey: false, capiTokens: false, discordWebhookUrl: false } as const;
@@ -39,12 +42,13 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     setSecret: () => ({ ok: true as const, value: PRESENCE }),
     listGpus: () => Promise.resolve([]),
     subscribeState: () => initialRootState(),
+    testTts: () => Promise.resolve({ ok: true as const, error: null }),
     ...over,
   };
 }
 
 describe("registerIpcHandlers", () => {
-  it("registers exactly the invoke channels through Step 1.9", () => {
+  it("registers exactly the invoke channels through Step 2.7b", () => {
     const ipc = fakeIpcMain();
     registerIpcHandlers(ipc, deps());
     expect([...ipc.handlers.keys()].sort()).toEqual([
@@ -56,6 +60,7 @@ describe("registerIpcHandlers", () => {
       "settings.set",
       "state.snapshot",
       "system.gpus",
+      "tts.test",
     ]);
   });
 

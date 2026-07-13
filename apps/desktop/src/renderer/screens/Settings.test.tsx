@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import { Settings } from "./Settings.js";
@@ -13,6 +13,9 @@ const BASE_SETTINGS = {
   consentWing: false,
   consentCommunity: false,
   consentDiscord: false,
+  ttsEnabled: false,
+  ttsVoice: "en_US-ryan-high",
+  ttsVolume: 0.8,
 };
 const BASE_PRESENCE = { inaraApiKey: false, capiTokens: false, discordWebhookUrl: false };
 
@@ -30,6 +33,8 @@ function stubApi(over: Partial<LodestarApi> = {}): LodestarApi {
     getStateSnapshot: vi.fn(),
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
+    testTts: vi.fn().mockResolvedValue({ ok: true, error: null }),
+    onTtsAudio: vi.fn(() => () => {}),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;
@@ -51,6 +56,42 @@ describe("Settings screen", () => {
       expect(screen.getByLabelText(/journal path/i)).toHaveValue("D:/journal");
     });
     expect(screen.getByLabelText(/ollama endpoint/i)).toHaveValue("http://127.0.0.1:11434");
+  });
+
+  it("TTS: plays a voice test and shows the success note", async () => {
+    const testTts = vi.fn().mockResolvedValue({ ok: true, error: null });
+    stubApi({ testTts });
+    render(<Settings />);
+    await userEvent.click(await screen.findByRole("button", { name: /test voice/i }));
+    await waitFor(() => {
+      expect(testTts).toHaveBeenCalled();
+    });
+    expect(screen.getByTestId("tts-note")).toHaveTextContent(/voice test played/i);
+  });
+
+  it("TTS: shows a failure note when the voice test fails", async () => {
+    stubApi({ testTts: vi.fn().mockResolvedValue({ ok: false, error: "not-installed" }) });
+    render(<Settings />);
+    await userEvent.click(await screen.findByRole("button", { name: /test voice/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId("tts-note")).toHaveTextContent(/failed/i);
+    });
+  });
+
+  it("TTS: toggling enable persists ttsEnabled; the volume slider persists ttsVolume", async () => {
+    const setSetting = vi.fn().mockResolvedValue({ ...BASE_SETTINGS, ttsEnabled: true });
+    stubApi({ setSetting });
+    render(<Settings />);
+    await userEvent.click(await screen.findByLabelText(/enable voice callouts/i));
+    await waitFor(() => {
+      expect(setSetting).toHaveBeenCalledWith({ key: "ttsEnabled", value: true });
+    });
+    const slider = screen.getByLabelText(/tts volume/i);
+    fireEvent.change(slider, { target: { value: "0.5" } }); // live visual
+    fireEvent.keyUp(slider); // commit persists
+    await waitFor(() => {
+      expect(setSetting).toHaveBeenCalledWith({ key: "ttsVolume", value: 0.5 });
+    });
   });
 
   it("persists a valid Ollama endpoint change and reflects the server's returned value", async () => {

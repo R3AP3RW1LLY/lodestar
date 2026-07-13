@@ -65,9 +65,18 @@ importers:
       '@lodestar/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@lodestar/data':
+        specifier: workspace:*
+        version: link:../../packages/data
+      '@lodestar/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@lodestar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@lodestar/voice':
+        specifier: workspace:*
+        version: link:../../packages/voice
       better-sqlite3:
         specifier: 12.11.1
         version: 12.11.1
