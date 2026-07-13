@@ -1,13 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { openDatabase, applyMigrations, MIGRATIONS } from "@lodestar/data";
 import type { Db } from "@lodestar/data";
 import type { RootState, SessionSummary } from "@lodestar/shared";
-import type { TailerLike, WatcherFs } from "../journal/watcher.js";
+import type { JournalCursor, TailerLike, WatcherFs } from "../journal/watcher.js";
 import { createSessionRepository } from "../session/repository.js";
 import { createLiveEngine } from "./live-engine.js";
+import type { JournalCursorStore } from "./live-engine.js";
 
 const FIXTURE_DIR = fileURLToPath(new URL("../../test/fixtures/journal/", import.meta.url));
 
@@ -24,6 +26,7 @@ function fixtureLines(): string[] {
 function oneShotTailer(name: string, lines: string[]): TailerLike {
   let drained = false;
   return {
+    position: 0,
     poll: () => {
       if (drained) return [];
       drained = true;
@@ -232,5 +235,137 @@ describe("createLiveEngine — live status files + subscriber safety", () => {
     expect(() => {
       engine.stop();
     }).not.toThrow();
+  });
+});
+
+const rowCount = (db: Db, table: string): number =>
+  (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
+
+describe("createLiveEngine — restart resume (Step 1.9a)", () => {
+  let db: Db;
+  let dir: string;
+  let journalPath: string;
+  let cursor: JournalCursorStore & { readonly current: JournalCursor | undefined };
+
+  beforeEach(() => {
+    db = openDatabase(":memory:");
+    applyMigrations(db, MIGRATIONS);
+    dir = mkdtempSync(join(tmpdir(), "lodestar-engine-restart-"));
+    journalPath = join(dir, "Journal.2025-06-01T120000.01.log");
+    const box: { current: JournalCursor | undefined } = { current: undefined };
+    cursor = {
+      get current() {
+        return box.current;
+      },
+      load: () => box.current,
+      save: (c) => {
+        box.current = c;
+      },
+    };
+  });
+  afterEach(() => {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const ENDED_SESSION = [
+    `{"timestamp":"2025-06-01T12:00:00Z","event":"SupercruiseExit","StarSystem":"Sys","Body":"A Ring","BodyType":"PlanetaryRing"}`,
+    `{"timestamp":"2025-06-01T12:00:10Z","event":"LaunchDrone","Type":"Prospector"}`,
+    `{"timestamp":"2025-06-01T12:01:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+    `{"timestamp":"2025-06-01T12:02:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+    `{"timestamp":"2025-06-01T12:03:00Z","event":"Cargo","Vessel":"Ship","Count":2,"Inventory":[{"Name":"painite","Count":2,"Stolen":0}]}`,
+    `{"timestamp":"2025-06-01T12:05:00Z","event":"Docked","StationName":"S","StationType":"Coriolis","StarSystem":"Sys","SystemAddress":1,"MarketID":2}`,
+    `{"timestamp":"2025-06-01T12:06:00Z","event":"MarketSell","MarketID":2,"Type":"painite","Count":2,"SellPrice":1,"TotalSale":1000000,"AvgPricePaid":0}`,
+  ];
+
+  it("does not re-fold consumed lines on restart — no duplicate ended-session rows", () => {
+    writeFileSync(journalPath, ENDED_SESSION.join("\n") + "\n");
+    const repo = createSessionRepository(db);
+
+    const a = createLiveEngine({ dir, repository: repo, cursorStore: cursor });
+    a.tick();
+    expect(repo.listEnded()).toHaveLength(1);
+    expect(cursor.current).toBeDefined(); // the read position was persisted
+
+    // "Restart": a fresh engine over the same DB + cursor must not replay the file.
+    const b = createLiveEngine({ dir, repository: repo, cursorStore: cursor });
+    b.tick();
+    expect(repo.listEnded()).toHaveLength(1); // NOT 2
+    expect(rowCount(db, "sessions")).toBe(1);
+    expect(rowCount(db, "refinements")).toBe(2);
+    expect(rowCount(db, "session_events")).toBe(4); // drone + 2 refine + sell, not re-inserted
+
+    // A newly-appended session IS picked up after resume.
+    appendFileSync(
+      journalPath,
+      [
+        `{"timestamp":"2025-06-01T12:10:00Z","event":"SupercruiseExit","StarSystem":"Sys","Body":"B Ring","BodyType":"PlanetaryRing"}`,
+        `{"timestamp":"2025-06-01T12:10:10Z","event":"LaunchDrone","Type":"Prospector"}`,
+        `{"timestamp":"2025-06-01T12:11:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+      ].join("\n") + "\n",
+    );
+    b.tick();
+    expect(rowCount(db, "sessions")).toBe(2); // the new active session was inserted
+    expect(b.session()?.tonsRefined).toBe(1);
+  });
+
+  it("starts at EOF (no re-fold) when an active session is resumed but the cursor is lost", () => {
+    // The active session's totals are in the DB, but the best-effort cursor file
+    // is gone — a naive backfill from 0 would re-fold and double the totals.
+    writeFileSync(
+      journalPath,
+      [
+        `{"timestamp":"2025-06-01T12:00:00Z","event":"SupercruiseExit","StarSystem":"Sys","Body":"A Ring","BodyType":"PlanetaryRing"}`,
+        `{"timestamp":"2025-06-01T12:00:10Z","event":"LaunchDrone","Type":"Prospector"}`,
+        `{"timestamp":"2025-06-01T12:01:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+        `{"timestamp":"2025-06-01T12:02:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+      ].join("\n") + "\n",
+    );
+    const repo = createSessionRepository(db);
+    const a = createLiveEngine({ dir, repository: repo, cursorStore: cursor });
+    a.tick();
+    expect(repo.loadActive()?.session.tonsRefined).toBe(2);
+    const refsBefore = rowCount(db, "refinements");
+
+    // Restart WITHOUT a cursor store (cursor lost) — must not re-fold the journal.
+    const b = createLiveEngine({ dir, repository: repo });
+    b.tick();
+    expect(b.session()?.tonsRefined).toBe(2); // resumed, NOT doubled to 4
+    expect(rowCount(db, "refinements")).toBe(refsBefore); // no duplicate refinement rows
+    expect(rowCount(db, "sessions")).toBe(1);
+  });
+
+  it("resumes an active session's totals across restart, updating its row (no orphan)", () => {
+    writeFileSync(
+      journalPath,
+      [
+        `{"timestamp":"2025-06-01T12:00:00Z","event":"SupercruiseExit","StarSystem":"Sys","Body":"A Ring","BodyType":"PlanetaryRing"}`,
+        `{"timestamp":"2025-06-01T12:00:10Z","event":"LaunchDrone","Type":"Prospector"}`,
+        `{"timestamp":"2025-06-01T12:01:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+        `{"timestamp":"2025-06-01T12:02:00Z","event":"MiningRefined","Type":"$painite_name;"}`,
+      ].join("\n") + "\n",
+    );
+    const repo = createSessionRepository(db);
+
+    const a = createLiveEngine({ dir, repository: repo, cursorStore: cursor });
+    a.tick();
+    expect(repo.loadActive()?.session.tonsRefined).toBe(2);
+    expect(rowCount(db, "sessions")).toBe(1);
+
+    // Restart: the active session resumes from the DB, and the cursor prevents replay.
+    const b = createLiveEngine({ dir, repository: repo, cursorStore: cursor });
+    expect(b.session()?.tonsRefined).toBe(2); // resumed on construction
+    b.tick();
+    expect(rowCount(db, "sessions")).toBe(1); // no duplicate/orphan from replay
+
+    // One more refine after restart accumulates onto the SAME session/row.
+    appendFileSync(
+      journalPath,
+      `{"timestamp":"2025-06-01T12:10:00Z","event":"MiningRefined","Type":"$painite_name;"}\n`,
+    );
+    b.tick();
+    expect(b.session()?.tonsRefined).toBe(3);
+    expect(rowCount(db, "sessions")).toBe(1);
+    expect(repo.loadActive()?.session.tonsRefined).toBe(3);
   });
 });

@@ -43,5 +43,11 @@ export {
   normalizeCommodity,
   createSessionRepository,
 } from "./session/index.js";
-export type { LiveEngine, LiveEngineOptions, Unsubscribe } from "./engine/index.js";
+export type {
+  LiveEngine,
+  LiveEngineOptions,
+  Unsubscribe,
+  JournalCursorStore,
+  JournalCursor,
+} from "./engine/index.js";
 export { createLiveEngine } from "./engine/index.js";

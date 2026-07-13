@@ -47,6 +47,55 @@ describe("JournalWatcher — integration over real temp files", () => {
     expect(journalRaws(c.events)).toEqual([`{"timestamp":"2025-06-01T12:00:02Z","event":"E2"}`]);
   });
 
+  it("reports the active tailer's consumed byte position (a line boundary) for the cursor", () => {
+    const name = "Journal.2025-06-01T120000.01.log";
+    writeFileSync(join(dir, name), line(1) + line(2));
+    const c = collector();
+    const w = new JournalWatcher({ dir, emit: c.emit });
+    expect(w.activePosition()).toBeUndefined(); // nothing tailing yet
+    w.tick();
+    expect(w.activePosition()).toEqual({
+      file: name,
+      offset: Buffer.byteLength(line(1) + line(2)),
+    });
+  });
+
+  it("resumes the matching journal from the cursor offset (skips consumed lines)", () => {
+    const name = "Journal.2025-06-01T120000.01.log";
+    writeFileSync(join(dir, name), line(1) + line(2) + line(3));
+    const offset = Buffer.byteLength(line(1) + line(2)); // already consumed through E2
+    const c = collector();
+    new JournalWatcher({ dir, emit: c.emit, resumeCursor: { file: name, offset } }).tick();
+    expect(journalRaws(c.events)).toEqual([`{"timestamp":"2025-06-01T12:00:03Z","event":"E3"}`]);
+  });
+
+  it("ignores the cursor for a different (newly-appeared) journal and backfills from 0", () => {
+    writeFileSync(join(dir, "Journal.2025-06-01T130000.01.log"), line(1) + line(2));
+    const c = collector();
+    // Cursor names an older file; the newest is a fresh file → backfill, not resume.
+    new JournalWatcher({
+      dir,
+      emit: c.emit,
+      resumeCursor: { file: "Journal.2025-06-01T120000.01.log", offset: 999 },
+    }).tick();
+    expect(journalRaws(c.events)).toEqual([
+      `{"timestamp":"2025-06-01T12:00:01Z","event":"E1"}`,
+      `{"timestamp":"2025-06-01T12:00:02Z","event":"E2"}`,
+    ]);
+  });
+
+  it("with resumeAtEnd (no cursor) starts the cold-start file at its current end", () => {
+    const name = "Journal.2025-06-01T120000.01.log";
+    writeFileSync(join(dir, name), line(1) + line(2));
+    const c = collector();
+    const w = new JournalWatcher({ dir, emit: c.emit, resumeAtEnd: true });
+    w.tick();
+    expect(journalRaws(c.events)).toEqual([]); // started at EOF — nothing backfilled
+    appendFileSync(join(dir, name), line(3)); // but new appends still flow
+    w.tick();
+    expect(journalRaws(c.events)).toEqual([`{"timestamp":"2025-06-01T12:00:03Z","event":"E3"}`]);
+  });
+
   it("switches to a rotated-in newer file, draining the old one first (no lost lines)", () => {
     const first = join(dir, "Journal.2025-06-01T120000.01.log");
     writeFileSync(first, line(1));
@@ -158,6 +207,7 @@ describe("JournalWatcher — resilience (injected failing ports)", () => {
       logger,
       fs,
       makeTailer: () => ({
+        position: 0,
         poll: (): TailLine[] => {
           throw new Error("EBUSY");
         },

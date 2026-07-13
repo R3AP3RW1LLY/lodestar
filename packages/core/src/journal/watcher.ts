@@ -44,6 +44,14 @@ export interface WatcherLogger {
 /** Minimal tailer surface the watcher drives (injectable for resilience tests). */
 export interface TailerLike {
   poll(): TailLine[];
+  /** Byte offset consumed so far (a line boundary) — persisted for resume (1.9a). */
+  readonly position: number;
+}
+
+/** A persisted resume point: continue tailing `file` from `offset` (1.9a). */
+export interface JournalCursor {
+  readonly file: string;
+  readonly offset: number;
 }
 
 /** Filesystem port (defaults to real fs; injectable so error paths are testable). */
@@ -52,6 +60,8 @@ export interface WatcherFs {
   /** Modification time in ms, or null if the file does not exist. */
   statMtimeMs(path: string): number | null;
   readFile(path: string): string;
+  /** File size in bytes, or null if absent — for resume-at-end (1.9a); optional. */
+  statSize?(path: string): number | null;
 }
 
 export interface JournalWatcherOptions {
@@ -60,7 +70,16 @@ export interface JournalWatcherOptions {
   readonly logger?: WatcherLogger;
   readonly pollIntervalMs?: number;
   readonly fs?: WatcherFs;
-  readonly makeTailer?: (name: string, path: string) => TailerLike;
+  readonly makeTailer?: (name: string, path: string, startOffset: number) => TailerLike;
+  /** Resume the matching journal from a persisted byte offset (1.9a); one-shot. */
+  readonly resumeCursor?: JournalCursor;
+  /**
+   * Start the first (cold-start) journal at its current END instead of the top,
+   * even without a cursor (1.9a). Used when an active session is being resumed but
+   * no trustworthy cursor exists, so a backfill can't re-fold already-counted
+   * lines onto it. One-shot; a later rotation still backfills from the start.
+   */
+  readonly resumeAtEnd?: boolean;
 }
 
 export const LIVE_FILES: readonly LiveFileName[] = [
@@ -85,6 +104,13 @@ export function nodeWatcherFs(): WatcherFs {
     statMtimeMs: (path) => {
       try {
         return statSync(path).mtimeMs;
+      } catch {
+        return null;
+      }
+    },
+    statSize: (path) => {
+      try {
+        return statSync(path).size;
       } catch {
         return null;
       }
@@ -116,11 +142,26 @@ export class JournalWatcher {
   private readonly liveContent = new Map<LiveFileName, string>();
   private timer: ReturnType<typeof setInterval> | undefined;
   private readonly fs: WatcherFs;
-  private readonly makeTailer: (name: string, path: string) => TailerLike;
+  private readonly makeTailer: (name: string, path: string, startOffset: number) => TailerLike;
+  /** Consumed once, on the first switch to the matching file (1.9a). */
+  private resumeCursor: JournalCursor | undefined;
+  /** Consumed once, on the cold-start switch when no cursor is present (1.9a). */
+  private resumeAtEnd: boolean;
 
   constructor(private readonly opts: JournalWatcherOptions) {
     this.fs = opts.fs ?? nodeWatcherFs();
-    this.makeTailer = opts.makeTailer ?? ((name, path) => new Tailer(name, nodeFileSource(path)));
+    this.makeTailer =
+      opts.makeTailer ??
+      ((name, path, startOffset) => new Tailer(name, nodeFileSource(path), { startOffset }));
+    this.resumeCursor = opts.resumeCursor;
+    this.resumeAtEnd = opts.resumeAtEnd ?? false;
+  }
+
+  /** The active journal + its consumed byte offset, for cursor persistence (1.9a). */
+  activePosition(): JournalCursor | undefined {
+    return this.active === undefined
+      ? undefined
+      : { file: this.active.name, offset: this.active.tailer.position };
   }
 
   /** One scan + poll cycle. Deterministic — tests call this directly. */
@@ -152,7 +193,21 @@ export class JournalWatcher {
   }
 
   private switchTo(name: string): void {
-    this.active = { name, tailer: this.makeTailer(name, join(this.opts.dir, name)) };
+    // Resume from the cursor only for the exact file we were tailing at shutdown;
+    // a newly-appearing or rotated-in journal always backfills from the start. The
+    // cursor is one-shot — every switch after the first backfills. `resumeAtEnd`
+    // (an active session but no cursor) starts at the current EOF instead of the
+    // top so a backfill can't re-fold already-counted lines onto the session.
+    const path = join(this.opts.dir, name);
+    let startOffset = 0;
+    if (this.resumeCursor?.file === name) {
+      startOffset = this.resumeCursor.offset;
+    } else if (this.resumeAtEnd) {
+      startOffset = this.fs.statSize?.(path) ?? 0;
+    }
+    this.resumeCursor = undefined;
+    this.resumeAtEnd = false;
+    this.active = { name, tailer: this.makeTailer(name, path, startOffset) };
   }
 
   private rotateIfNeeded(): void {

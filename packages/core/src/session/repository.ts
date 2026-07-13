@@ -1,12 +1,14 @@
 /**
- * Session persistence (SSOT Step 1.8). Writes the session row + append-only
- * session_events + per-ton refinements, and reconstructs an active session on
- * app restart. Restart model (no double-counting): a session's authoritative
- * TOTALS are reloaded verbatim from the persisted row — the journal is never
- * re-folded onto them. Transient end-detection state (current cargo, sold flag)
- * resets on resume and is re-established by the next Cargo event; the journal
- * tailer's byte offset is persisted so backfill never re-reads consumed lines
- * (that wiring lands in Step 1.9). Only the user's own local data.
+ * Session persistence (SSOT Step 1.8 + resume wiring in 1.9a). Writes the session
+ * row + append-only session_events + per-ton refinements, and reconstructs an
+ * active session on app restart. Restart model: a session's authoritative TOTALS
+ * are reloaded verbatim from the persisted row and the engine resumes the journal
+ * past already-consumed lines (Step 1.9a cursor), so a CLEAN restart doesn't
+ * re-fold. Transient end-detection state resets on resume: `cargoByCommodity` is
+ * re-established by the next Cargo event, but `soldSomething` only by the next
+ * MarketSell — so a session already sold to zero right before a restart won't
+ * cargo-zero-end until a later sell or the 20-min idle timeout. Only the user's
+ * own local data.
  */
 
 import type { Db } from "@lodestar/data";
@@ -96,8 +98,8 @@ export function createSessionRepository(db: Db): SessionRepository {
   function rebuild(row: SessionRow): Session {
     // Reload the full append-only history so `save`'s slice-by-count stays exact
     // and idempotent after a restart. Totals come from the row verbatim (never
-    // re-folded). Transient end-detection state (cargoByCommodity, soldSomething)
-    // resets here and is re-established by the next Cargo event after resume.
+    // re-folded). Transient end-detection state resets here: cargoByCommodity is
+    // re-established by the next Cargo event, soldSomething only by the next sell.
     const refinements = db
       .prepare(
         "SELECT timestamp, commodity, tons FROM refinements WHERE session_id = ? ORDER BY id",
