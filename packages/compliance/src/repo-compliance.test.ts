@@ -79,6 +79,7 @@ describe("compliance: no cloud AI", () => {
     expect([...INSTALL_HOSTS]).toEqual([
       "github.com",
       "objects.githubusercontent.com",
+      "release-assets.githubusercontent.com",
       "huggingface.co",
       "registry.ollama.ai",
       "ollama.com",

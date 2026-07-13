@@ -35,6 +35,10 @@ export const RUNTIME_HOSTS: readonly string[] = Object.freeze([
 export const INSTALL_HOSTS: readonly string[] = Object.freeze([
   "github.com",
   "objects.githubusercontent.com",
+  // The signed, expiring release-asset CDN that github.com 302s to for large binaries
+  // + models (Piper + voice). Pinned so the downloader's per-hop re-check follows it;
+  // the committed SHA-256 is the integrity guarantee regardless of the CDN.
+  "release-assets.githubusercontent.com",
   "huggingface.co",
   "registry.ollama.ai",
   "ollama.com",
