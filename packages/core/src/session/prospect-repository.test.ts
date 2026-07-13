@@ -80,32 +80,16 @@ describe("ProspectRepository (migration 003)", () => {
     expect(repo.listBySession(sessionId)[0]?.motherlode).toBeUndefined();
   });
 
-  it("markLastCracked flags the session's most recent prospect (temporal deep-core linkage)", () => {
+  it("markCracked flags a specific prospect (never a 'most recent' heuristic) — 2.6", () => {
     const repo = createProspectRepository(db);
-    repo.save(prospect(HIGH_PAINITE), sessionId);
-    repo.save(prospect(DEPLETED), sessionId);
-    expect(repo.markLastCracked(sessionId)).toBe(true);
+    const a = repo.save(prospect(HIGH_PAINITE), sessionId);
+    const b = repo.save(prospect(DEPLETED), sessionId);
+    expect(repo.markCracked(a)).toBe(true); // the OLDER row, not the latest
     const rows = repo.listBySession(sessionId);
-    expect(rows[0]?.cracked).toBe(false); // the earlier prospect is untouched
-    expect(rows[1]?.cracked).toBe(true); // only the most recent is flagged
-    // No prospects for an unknown session → nothing to flag.
-    expect(repo.markLastCracked(999)).toBe(false);
-  });
-
-  it("markLastCracked is scoped to its session (never touches another session's rows)", () => {
-    const other = Number(
-      db
-        .prepare(
-          "INSERT INTO sessions (started_at, status) VALUES ('2025-06-01T13:00:00Z','active')",
-        )
-        .run().lastInsertRowid,
-    );
-    const repo = createProspectRepository(db);
-    repo.save(prospect(HIGH_PAINITE), sessionId);
-    repo.save(prospect(DEPLETED), other);
-    expect(repo.markLastCracked(sessionId)).toBe(true);
-    expect(repo.listBySession(sessionId)[0]?.cracked).toBe(true);
-    expect(repo.listBySession(other)[0]?.cracked).toBe(false); // the other session is untouched
+    expect(rows[0]?.cracked).toBe(true); // only a
+    expect(rows[1]?.cracked).toBe(false); // b untouched
+    expect(b).toBeGreaterThan(a);
+    expect(repo.markCracked(9999)).toBe(false); // no such row
   });
 
   it("persists a prospect with no active session (session_id null)", () => {
@@ -126,5 +110,34 @@ describe("ProspectRepository (migration 003)", () => {
     repo.save(prospect(HIGH_PAINITE), sessionId);
     db.prepare('UPDATE prospects SET materials = \'{"not":"an array"}\'').run();
     expect(() => repo.listBySession(sessionId)).toThrow(/expected a JSON array/);
+  });
+
+  it("a freshly-saved prospect has no verdict and is not acted-on (2.6 columns default)", () => {
+    const repo = createProspectRepository(db);
+    repo.save(prospect(HIGH_PAINITE), sessionId);
+    const row = repo.listBySession(sessionId)[0];
+    expect(row?.verdict).toBeUndefined();
+    expect(row?.reasoning).toBeUndefined();
+    expect(row?.actedOn).toBe(false);
+  });
+
+  it("saveVerdict persists the MINE/SKIP call + structured reasoning JSON onto the row (2.6)", () => {
+    const repo = createProspectRepository(db);
+    const id = repo.save(prospect(HIGH_PAINITE), sessionId);
+    const reasoning = JSON.stringify([{ code: "motherlode", commodityId: "painite" }]);
+    repo.saveVerdict(id, "MINE", reasoning);
+    const row = repo.listBySession(sessionId)[0];
+    expect(row?.verdict).toBe("MINE");
+    expect(row?.reasoning).toBe(reasoning);
+    expect(row?.actedOn).toBe(false); // saving a verdict does not imply acted-on
+  });
+
+  it("markActedOn flags the row (idempotent) and reports whether it matched (2.6)", () => {
+    const repo = createProspectRepository(db);
+    const id = repo.save(prospect(HIGH_PAINITE), sessionId);
+    expect(repo.markActedOn(id)).toBe(true);
+    expect(repo.listBySession(sessionId)[0]?.actedOn).toBe(true);
+    expect(repo.markActedOn(id)).toBe(true); // idempotent — still true, stays 1
+    expect(repo.markActedOn(9999)).toBe(false); // no such row
   });
 });

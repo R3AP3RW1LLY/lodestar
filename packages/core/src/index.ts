@@ -59,3 +59,15 @@ export type { ProspectRepository, StoredProspect } from "./session/prospect-repo
 export { createProspectRepository } from "./session/prospect-repository.js";
 export type { PriceBookStore, BestPrice, PriceSource, PriceResolver } from "./market/price-book.js";
 export { createPriceBookStore } from "./market/price-book.js";
+export type { BusLogger, Listener, Subscription, EventBusOptions } from "./bus/event-bus.js";
+export { EventBus } from "./bus/event-bus.js";
+export type {
+  AssayEvents,
+  AssayVerdict,
+  AssayOrchestrator,
+  AssayOrchestratorOptions,
+  ProspectedEvent,
+  RefinedEvent,
+  CrackedEvent,
+} from "./assay/orchestrator.js";
+export { createAssayOrchestrator } from "./assay/orchestrator.js";
