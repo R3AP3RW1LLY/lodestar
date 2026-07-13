@@ -11,5 +11,6 @@ export { guardUrl } from "./gateway/url-guard.js";
 export type { GuardOptions } from "./gateway/url-guard.js";
 export { createGateway } from "./gateway/gateway.js";
 export type { Gateway, GatewayOptions, FetchFn } from "./gateway/gateway.js";
+export { nodeFetch } from "./gateway/node-fetch.js";
 export { downloadArtifact } from "./downloader/artifact-downloader.js";
 export type { DownloadRequest } from "./downloader/artifact-downloader.js";

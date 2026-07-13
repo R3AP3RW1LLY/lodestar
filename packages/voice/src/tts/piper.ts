@@ -9,9 +9,9 @@
  */
 
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, relative, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import type { DomainError, Result } from "@lodestar/shared";
 import { domainError, err, ok } from "@lodestar/shared";
 import { untarGz, unzip } from "./archive.js";
@@ -28,6 +28,17 @@ export interface PiperFs {
   exists(path: string): boolean;
   /** Write bytes, creating parent directories as needed. */
   writeFile(path: string, bytes: Uint8Array): void;
+}
+
+/** The real node:fs adapter for {@link PiperFs} (creates parent dirs on write). */
+export function createNodePiperFs(): PiperFs {
+  return {
+    exists: (path) => existsSync(path),
+    writeFile: (path, bytes) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, bytes);
+    },
+  };
 }
 
 /** Spawns piper one-shot: feeds `text` on stdin, resolves the produced WAV bytes. */

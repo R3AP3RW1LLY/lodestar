@@ -4,6 +4,7 @@ import { NavRail } from "./components/NavRail.js";
 import { StatusBar } from "./components/StatusBar.js";
 import { ModuleView } from "./routes.js";
 import type { ModuleId } from "./modules.js";
+import { useTtsAudio } from "./audio/use-tts-audio.js";
 
 const HEALTH_POLL_MS = 5000;
 
@@ -15,6 +16,7 @@ export function App(): React.JSX.Element {
   const [active, setActive] = useState<ModuleId>("command-deck");
   const [health, setHealth] = useState<AppHealth | null>(null);
   const [connectionLost, setConnectionLost] = useState(false);
+  useTtsAudio();
 
   useEffect(() => {
     let cancelled = false;

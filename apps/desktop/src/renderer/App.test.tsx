@@ -14,6 +14,9 @@ const BASE_SETTINGS = {
   consentWing: false,
   consentCommunity: false,
   consentDiscord: false,
+  ttsEnabled: false,
+  ttsVoice: "en_US-ryan-high",
+  ttsVolume: 0.8,
 };
 
 function stubApi(over: Partial<LodestarApi> = {}): void {
@@ -34,6 +37,8 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
     getStateSnapshot: vi.fn((): Promise<RootState> => new Promise(() => {})),
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
+    testTts: vi.fn().mockResolvedValue({ ok: true, error: null }),
+    onTtsAudio: vi.fn(() => () => {}),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;

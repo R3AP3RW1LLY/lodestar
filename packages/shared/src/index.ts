@@ -25,6 +25,8 @@ export type {
   SecretsPresence,
   SecretsSetRequest,
   GpuInfo,
+  TtsAudio,
+  TtsTestResult,
   ChannelPayloads,
   Channel,
   Envelope,

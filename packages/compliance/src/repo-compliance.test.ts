@@ -113,7 +113,9 @@ describe("compliance: egress confinement (source scan)", () => {
   });
 
   it("no product source uses raw sockets/fetch outside the sanctioned gateway/downloader", () => {
-    const skipPaths = ["packages/integrations/src/gateway", "packages/integrations/src/downloader"];
+    // Paths are relative to each scanned group root (e.g. `packages`), so the
+    // sanctioned dirs are named WITHOUT the group prefix.
+    const skipPaths = ["integrations/src/gateway", "integrations/src/downloader"];
     const findings = ["packages", "apps", "services"].flatMap((group) =>
       scanTree(join(REPO_ROOT, group), { extensions: SRC_EXT, skipPaths }, findRawSocketUsage),
     );

@@ -17,6 +17,8 @@ import type {
   SettingsSetRequest,
   SettingsSnapshot,
   StateDelta,
+  TtsAudio,
+  TtsTestResult,
   WireResult,
 } from "@lodestar/shared";
 import { isEnvelope } from "@lodestar/shared";
@@ -41,6 +43,10 @@ export interface LodestarApi {
   getStateSnapshot: () => Promise<RootState>;
   onStateDelta: (cb: (delta: StateDelta) => void) => Unsubscribe;
   onSessionStats: (cb: (session: SessionSummary | null) => void) => Unsubscribe;
+  /** Settings test-phrase button — synthesize + play a callout, report success. */
+  testTts: () => Promise<TtsTestResult>;
+  /** Subscribe to synthesized verdict callouts pushed from main (for playback). */
+  onTtsAudio: (cb: (audio: TtsAudio) => void) => Unsubscribe;
 }
 
 export const EXPOSED_API_KEYS = [
@@ -54,6 +60,8 @@ export const EXPOSED_API_KEYS = [
   "getStateSnapshot",
   "onStateDelta",
   "onSessionStats",
+  "testTts",
+  "onTtsAudio",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
 function unwrap<T>(wire: WireResult<T>): T {
@@ -92,6 +100,11 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
     onSessionStats: (cb) =>
       subscribe("session.stats", (p) => {
         cb(p as SessionSummary | null);
+      }),
+    testTts: () => call<TtsTestResult>("tts.test"),
+    onTtsAudio: (cb) =>
+      subscribe("tts.audio", (p) => {
+        cb(p as TtsAudio);
       }),
   };
 }

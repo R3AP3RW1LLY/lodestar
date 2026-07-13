@@ -24,6 +24,9 @@ const SETTINGS_KEYS: readonly SettingsKey[] = [
   "consentWing",
   "consentCommunity",
   "consentDiscord",
+  "ttsEnabled",
+  "ttsVoice",
+  "ttsVolume",
 ];
 
 const CONSENT_KEYS = new Set<SettingsKey>(["consentWing", "consentCommunity", "consentDiscord"]);
@@ -60,6 +63,9 @@ export function createSettingsBridge(deps: SettingsBridgeDeps): SettingsBridge {
       consentWing: read("consentWing"),
       consentCommunity: read("consentCommunity"),
       consentDiscord: read("consentDiscord"),
+      ttsEnabled: read("ttsEnabled"),
+      ttsVoice: read("ttsVoice"),
+      ttsVolume: read("ttsVolume"),
     };
   }
 

@@ -1,11 +1,18 @@
 import { EventEmitter } from "node:events";
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { gzipSync, zipSync } from "fflate";
 import { domainError, err, ok } from "@lodestar/shared";
 import type { DomainError, Result } from "@lodestar/shared";
-import { createNodeRunPiper, ensureInstalled, isWav, synthesize } from "./piper.js";
+import {
+  createNodePiperFs,
+  createNodeRunPiper,
+  ensureInstalled,
+  isWav,
+  synthesize,
+} from "./piper.js";
 import type { ArtifactFetcher, PiperFs, PiperInstall, RunPiper, SpawnPiper } from "./piper.js";
 import { DEFAULT_VOICE_ID, PIPER_BINARY, PIPER_EXE_PATH, VOICES } from "./piper-assets.js";
 
@@ -231,6 +238,22 @@ function fakeSpawn(behavior: "ok" | "exit1" | "spawnError"): SpawnPiper {
     return child;
   };
 }
+
+describe("createNodePiperFs (node adapter)", () => {
+  it("reports existence and writes bytes, creating parent directories", () => {
+    const root = mkdtempSync(join(tmpdir(), "lodestar-fs-"));
+    try {
+      const fs = createNodePiperFs();
+      const target = join(root, "piper", "espeak-ng-data", "en_dict");
+      expect(fs.exists(target)).toBe(false);
+      fs.writeFile(target, new Uint8Array([1, 2, 3]));
+      expect(fs.exists(target)).toBe(true);
+      expect([...readFileSync(target)]).toEqual([1, 2, 3]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("createNodeRunPiper (node adapter)", () => {
   it("spawns piper, feeds stdin, reads the produced WAV, and cleans up", async () => {

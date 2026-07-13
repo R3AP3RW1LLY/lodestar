@@ -14,6 +14,7 @@ import type {
   SecretsSetRequest,
   SettingsSetRequest,
   SettingsSnapshot,
+  TtsTestResult,
   WireResult,
 } from "@lodestar/shared";
 import { domainError, err, ok, toWireResult } from "@lodestar/shared";
@@ -52,6 +53,8 @@ export interface IpcDeps {
   readonly listGpus: () => Promise<readonly GpuInfo[]>;
   /** Renderer subscribed: returns the current full state and re-baselines the delta stream. */
   readonly subscribeState: () => RootState;
+  /** Settings test-phrase button: synthesize + push a callout, report success. */
+  readonly testTts: () => Promise<TtsTestResult>;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -97,5 +100,9 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
 
   ipcMain.handle("state.snapshot", (): WireResult<RootState> =>
     toWireResult(ok(deps.subscribeState())),
+  );
+
+  ipcMain.handle("tts.test", async (): Promise<WireResult<TtsTestResult>> =>
+    toWireResult(ok(await deps.testTts())),
   );
 }

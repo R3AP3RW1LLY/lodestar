@@ -26,7 +26,13 @@
  * is folded through `reduce`/`advance`, which ignore it, and never surfaces.
  */
 
-import type { Logger, RootState, SessionSummary, StateInput } from "@lodestar/shared";
+import type {
+  Logger,
+  ParsedJournalEvent,
+  RootState,
+  SessionSummary,
+  StateInput,
+} from "@lodestar/shared";
 import { initialRootState, nullLogger } from "@lodestar/shared";
 import { parseJournalEvent } from "../journal/events/parse.js";
 import { parseCargo, parseStatus } from "../livefiles/index.js";
@@ -72,8 +78,12 @@ export interface LiveEngine {
   tick(): void;
   state(): RootState;
   session(): SessionSummary | null;
+  /** The active session's row id, or undefined when none is open (for assay wiring). */
+  sessionId(): number | undefined;
   onState(fn: (state: RootState) => void): Unsubscribe;
   onSession(fn: (session: SessionSummary | null) => void): Unsubscribe;
+  /** Each parsed journal event, for consumers beyond state/session (e.g. Assay, 2.6). */
+  onEvent(fn: (event: ParsedJournalEvent) => void): Unsubscribe;
 }
 
 export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
@@ -81,6 +91,7 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
   const repo = opts.repository;
   const stateListeners = new Set<(state: RootState) => void>();
   const sessionListeners = new Set<(session: SessionSummary | null) => void>();
+  const eventListeners = new Set<(event: ParsedJournalEvent) => void>();
 
   let rootState: RootState = initialRootState();
   let tracker: TrackerState = initialTracker();
@@ -146,6 +157,9 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     lastSession = current;
     sessionSummary = current === undefined ? null : summarize(current, opts.now?.());
 
+    // Surface the raw journal event AFTER persistence, so a consumer reading
+    // `sessionId()` sees the session context this event produced (Assay, 2.6).
+    if (input.kind === "journal") emit(eventListeners, input.event);
     emit(stateListeners, rootState);
     emit(sessionListeners, sessionSummary);
   }
@@ -213,6 +227,7 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     },
     state: () => rootState,
     session: () => sessionSummary,
+    sessionId: () => activeId,
     onState: (fn) => {
       stateListeners.add(fn);
       return () => stateListeners.delete(fn);
@@ -220,6 +235,10 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     onSession: (fn) => {
       sessionListeners.add(fn);
       return () => sessionListeners.delete(fn);
+    },
+    onEvent: (fn) => {
+      eventListeners.add(fn);
+      return () => eventListeners.delete(fn);
     },
   };
 }

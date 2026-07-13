@@ -27,11 +27,28 @@ export interface SettingsSnapshot {
   readonly consentWing: boolean;
   readonly consentCommunity: boolean;
   readonly consentDiscord: boolean;
+  readonly ttsEnabled: boolean;
+  readonly ttsVoice: string;
+  readonly ttsVolume: number;
 }
 
 export interface SettingsSetRequest {
   readonly key: keyof SettingsSnapshot;
-  readonly value: string | boolean | null;
+  readonly value: string | number | boolean | null;
+}
+
+/** A synthesized callout pushed to the renderer for playback (Step 2.7b). */
+export interface TtsAudio {
+  /** Base64-encoded WAV bytes (Piper output). */
+  readonly wavBase64: string;
+  /** Playback volume 0–1 (the current tts setting at synthesis time). */
+  readonly volume: number;
+}
+
+/** Result of the Settings test-phrase button (main synthesizes + pushes audio). */
+export interface TtsTestResult {
+  readonly ok: boolean;
+  readonly error: string | null;
 }
 
 /** Presence-only view of secrets — booleans, never the secret values. */
@@ -68,6 +85,10 @@ export interface ChannelPayloads {
   readonly "state.snapshot": RootState;
   readonly "state.delta": StateDelta;
   readonly "session.stats": SessionSummary | null;
+  // Step 2.7b — TTS. `tts.test` is a renderer→main invoke (synthesize + push a test
+  // phrase); `tts.audio` is push-only (main→renderer) carrying a callout WAV.
+  readonly "tts.test": TtsTestResult;
+  readonly "tts.audio": TtsAudio;
 }
 
 const CHANNEL_SET = {
@@ -81,6 +102,8 @@ const CHANNEL_SET = {
   "state.snapshot": true,
   "state.delta": true,
   "session.stats": true,
+  "tts.test": true,
+  "tts.audio": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

@@ -19,6 +19,12 @@ export interface SettingsSchema {
   readonly consentWing: boolean;
   readonly consentCommunity: boolean;
   readonly consentDiscord: boolean;
+  /** Piper TTS verdict callouts (Step 2.7b). Off by default (opt-in first-run download). */
+  readonly ttsEnabled: boolean;
+  /** Canonical Piper voice id (validity is enforced at install time, not here). */
+  readonly ttsVoice: string;
+  /** Playback volume 0–1. */
+  readonly ttsVolume: number;
 }
 
 export type SettingsKey = keyof SettingsSchema;
@@ -30,6 +36,9 @@ export const DEFAULT_SETTINGS: SettingsSchema = {
   consentWing: false,
   consentCommunity: false,
   consentDiscord: false,
+  ttsEnabled: false,
+  ttsVoice: "en_US-ryan-high",
+  ttsVolume: 0.8,
 };
 
 type Validator<K extends SettingsKey> = (value: unknown) => value is SettingsSchema[K];
@@ -38,6 +47,12 @@ const isNullableString = (v: unknown): v is string | null => v === null || typeo
 const isBoolean = (v: unknown): v is boolean => typeof v === "boolean";
 
 const isLoopbackEndpoint = (v: unknown): v is string => typeof v === "string" && isLoopbackUrl(v);
+
+/** A non-empty, bounded voice id; the pinned-voice check lives in the Piper installer. */
+const isVoiceId = (v: unknown): v is string =>
+  typeof v === "string" && v.length > 0 && v.length <= 64;
+const isVolume = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 1;
 
 /**
  * A local absolute journal path or null. UNC/network paths (`\\host\share`) are
@@ -58,6 +73,9 @@ const VALIDATORS: { [K in SettingsKey]: Validator<K> } = {
   consentWing: isBoolean,
   consentCommunity: isBoolean,
   consentDiscord: isBoolean,
+  ttsEnabled: isBoolean,
+  ttsVoice: isVoiceId,
+  ttsVolume: isVolume,
 };
 
 export interface SettingsService {
