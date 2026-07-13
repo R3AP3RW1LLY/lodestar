@@ -42,7 +42,7 @@ Electron + React 18 + TS (strict) + Vite + Tailwind (cockpit-MFD theme: near-bla
 4. **Test first** (failing for the right reason) → 5. **Implement only that step** → 6. **Verify** with the step's exact "Verify by" + `pnpm lint && pnpm test && pnpm compliance`.
 7. **Adversarial review** (architecture/design/red-team) → fix blockers.
 8. **Update SSOT:** mark `[x] DONE`, edit diverged steps, append §11 changelog line.
-9. **Commit + push** (Conventional Commit referencing the step).
+9. **Commit + PR** (`main` is PR-gated — no direct pushes): branch `feat/step-X.Y-<slug>` → Conventional Commit referencing the step → push → open PR → wait for all 5 CI checks green → self-merge → delete branch.
 10. **Phase gate:** run the Phase Definition of Done, whole-phase review, summarize, **pause for operator approval**.
 
 Never build ahead of the current step. Never let the SSOT drift from the code. At phase gates, wait for the operator.
