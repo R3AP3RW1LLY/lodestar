@@ -199,6 +199,15 @@ importers:
 
   packages/shared: {}
 
+  packages/voice:
+    dependencies:
+      '@lodestar/core':
+        specifier: workspace:*
+        version: link:../core
+      '@lodestar/shared':
+        specifier: workspace:*
+        version: link:../shared
+
 packages:
 
   '@adobe/css-tools@4.5.0':
