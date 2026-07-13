@@ -6,6 +6,21 @@ import { once } from "node:events";
 import { Writable } from "node:stream";
 import { createLogger, createRollingDestination, REDACT_PATHS } from "./logger.js";
 
+/**
+ * pino-roll rolls asynchronously (sonic-boom flushes + the new-file fs ops are
+ * off-thread), so the rolled files appear a variable moment after the write. A
+ * fixed sleep is racy on slow/loaded CI runners; poll until the expected count
+ * (or a generous deadline) instead.
+ */
+async function waitForLogFiles(dir: string, min: number, timeoutMs = 5000): Promise<string[]> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const files = readdirSync(dir).filter((f) => f.endsWith(".log"));
+    if (files.length >= min || Date.now() > deadline) return files;
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+
 function captureStream(): { stream: Writable; lines: () => Record<string, unknown>[] } {
   const chunks: string[] = [];
   const stream = new Writable({
@@ -87,8 +102,7 @@ describe("logger", () => {
           dest.flush(resolve);
         });
       }
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      const files = readdirSync(dir).filter((f) => f.endsWith(".log"));
+      const files = await waitForLogFiles(dir, 2);
       expect(files.length).toBeGreaterThanOrEqual(2);
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -110,8 +124,7 @@ describe("logger", () => {
           dest.flush(resolve);
         });
       }
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      const files = readdirSync(dir).filter((f) => f.endsWith(".log"));
+      const files = await waitForLogFiles(dir, 2);
       expect(files.length).toBeGreaterThanOrEqual(2);
       const content = files.map((f) => readFileSync(join(dir, f), "utf8")).join("");
       expect(content).not.toContain("sk-LIVE-SECRET");
