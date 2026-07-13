@@ -85,3 +85,10 @@ export { initialRootState } from "./state.js";
 export type { StateDelta } from "./state-delta.js";
 export { diffRootState, applyStateDelta, deepEqual } from "./state-delta.js";
 export type { SessionSummary } from "./session.js";
+export type { MiningMethod, Commodity, CommodityLookup } from "./commodities.js";
+export {
+  COMMODITIES,
+  commodityFromInternal,
+  commodityFromEddn,
+  commodityById,
+} from "./commodities.js";
