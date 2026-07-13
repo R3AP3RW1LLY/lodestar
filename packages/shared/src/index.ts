@@ -82,3 +82,4 @@ export type {
   StateInput,
 } from "./state.js";
 export { initialRootState } from "./state.js";
+export type { SessionSummary } from "./session.js";

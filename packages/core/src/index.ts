@@ -27,3 +27,19 @@ export {
   reduceCargo,
   classifyActivity,
 } from "./state/index.js";
+export type {
+  Session,
+  Refinement,
+  LoggedEvent,
+  TrackerState,
+  SessionRepository,
+} from "./session/index.js";
+export {
+  initialTracker,
+  advance,
+  stop,
+  foldSessions,
+  summarize,
+  normalizeCommodity,
+  createSessionRepository,
+} from "./session/index.js";

@@ -8,5 +8,9 @@
 
 import type { Migration } from "../migrator.js";
 import { INIT_001_SQL } from "./001-init.js";
+import { SESSIONS_002_SQL } from "./002-sessions.js";
 
-export const MIGRATIONS: readonly Migration[] = [{ version: 1, name: "init", sql: INIT_001_SQL }];
+export const MIGRATIONS: readonly Migration[] = [
+  { version: 1, name: "init", sql: INIT_001_SQL },
+  { version: 2, name: "sessions", sql: SESSIONS_002_SQL },
+];
