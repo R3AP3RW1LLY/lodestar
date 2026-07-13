@@ -1,0 +1,19 @@
+{
+  "name": "@lodestar/voice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice I/O: Piper TTS callouts (CPU) + the priority speech queue. STT (faster-whisper) joins in Phase 7. The `ai` package must never import this (compliance firewall — the LLM can never acquire speech/input capability).",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@lodestar/core": "workspace:*",
+    "@lodestar/shared": "workspace:*"
+  }
+}

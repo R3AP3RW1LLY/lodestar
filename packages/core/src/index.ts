@@ -71,3 +71,12 @@ export type {
   CrackedEvent,
 } from "./assay/orchestrator.js";
 export { createAssayOrchestrator } from "./assay/orchestrator.js";
+export type {
+  Supervisor,
+  SupervisorOptions,
+  SupervisorStatus,
+  SidecarHandle,
+  SidecarSpec,
+  SpawnSidecar,
+} from "./sidecar/supervisor.js";
+export { createSupervisor } from "./sidecar/supervisor.js";
