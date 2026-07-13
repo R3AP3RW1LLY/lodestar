@@ -1,5 +1,9 @@
 # @lodestar/intelligence
 
-Layer 1 — the deterministic intelligence engine. Hotspot scoring, overlap detection, route/market optimization, run planning. All numbers live here; zero hallucination.
+Layer 1 — the deterministic intelligence engine. All numbers, zero hallucination;
+pure (depends on `@lodestar/shared` only — no I/O, DB, network, or settings).
 
-Delivered by: Phase 4. See [LODESTAR_SSOT.md](../../LODESTAR_SSOT.md) — no implementation exists here until its phase begins; LODESTAR never commits placeholder code.
+First code lands in **Phase 2 (Assay)**: the commodity × method worth-mining
+threshold matrix (Step 2.3) and the MINE/SKIP verdict engine (Step 2.4). Hotspot
+scoring, overlap detection, and route/market optimization follow in later phases.
+See [LODESTAR_SSOT.md](../../LODESTAR_SSOT.md).

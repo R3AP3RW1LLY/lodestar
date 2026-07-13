@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COMMODITIES,
+  COMMODITY_IDS,
   commodityById,
   commodityFromEddn,
   commodityFromInternal,
@@ -149,6 +150,10 @@ describe("canonical commodity dictionary", () => {
     for (const [id, methods] of Object.entries(expected)) {
       expect(new Set(commodityById(id)?.methods)).toEqual(new Set(methods));
     }
+  });
+
+  it("COMMODITIES exactly covers the COMMODITY_IDS union (no drift)", () => {
+    expect([...COMMODITIES.map((x) => x.id)].sort()).toEqual([...COMMODITY_IDS].sort());
   });
 
   it("has unique ids, symbols, and eddn names (no dictionary collisions)", () => {
