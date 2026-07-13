@@ -7,21 +7,23 @@ export interface MfdPanelProps {
 }
 
 /**
- * The base cockpit panel: near-black, clipped corners, optional titled header.
+ * The base panel: a frosted-glass surface with an optional titled header.
  * Rendered as an accessible region labelled by its title.
  */
 export function MfdPanel({ title, className, children }: MfdPanelProps): React.JSX.Element {
   return (
     <section
       aria-label={title}
-      className={`scanlines clip-mfd border border-cyan-dim/40 bg-void-700/80 text-orange shadow-glow ${className ?? ""}`}
+      className={`glass rounded-xl text-orange transition-shadow duration-200 hover:shadow-glow ${className ?? ""}`}
     >
       {title !== undefined && (
-        <header className="border-b border-cyan-dim/30 px-3 py-1.5">
-          <h2 className="font-display text-xs uppercase tracking-[0.2em] text-cyan">{title}</h2>
+        <header className="border-b border-white/10 px-3.5 py-2">
+          <h2 className="font-display text-[11px] uppercase tracking-[0.22em] text-cyan/90">
+            {title}
+          </h2>
         </header>
       )}
-      <div className="p-3">{children}</div>
+      <div className="p-3.5">{children}</div>
     </section>
   );
 }

@@ -43,7 +43,7 @@ export function App(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="flex h-screen flex-col bg-void text-orange">
+    <div className="flex h-screen flex-col text-orange">
       <div className="flex min-h-0 flex-1">
         <NavRail active={active} onSelect={setActive} />
         <main className="min-h-0 flex-1 overflow-auto">

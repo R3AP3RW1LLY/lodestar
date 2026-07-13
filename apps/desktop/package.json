@@ -47,5 +47,27 @@
     "tailwindcss": "^3.4.19",
     "vite": "^7.1.12",
     "zustand": "^5.0.14"
+  },
+  "build": {
+    "appId": "org.lodestar.app",
+    "productName": "LODESTAR",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "mac": {
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "icon": "build/icon.png"
+    }
   }
 }

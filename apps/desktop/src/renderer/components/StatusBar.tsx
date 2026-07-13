@@ -35,7 +35,7 @@ function Indicator({
 /** Bottom status bar: live DB + journal indicators (Ollama joins Phase 5). */
 export function StatusBar({ health, connectionLost = false }: StatusBarProps): React.JSX.Element {
   return (
-    <footer className="flex items-center gap-4 border-t border-cyan-dim/30 px-3 py-1 font-mono text-[10px]">
+    <footer className="flex items-center gap-4 border-t border-white/10 bg-white/[0.02] px-4 py-1.5 font-mono text-[10px] backdrop-blur-md">
       {connectionLost ? (
         <span data-testid="status-connection" className="text-signal-danger">
           connection lost

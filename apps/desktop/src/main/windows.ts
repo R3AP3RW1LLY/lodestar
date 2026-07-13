@@ -9,8 +9,19 @@
  */
 
 import { join } from "node:path";
+import { existsSync } from "node:fs";
 import { BrowserWindow, shell } from "electron";
 import type { BrowserWindowConstructorOptions } from "electron";
+
+/** The brand app icon (window title bar + Windows taskbar). Resolved from the
+ * committed electron-builder resources dir; packaging finalizes this in Phase 11. */
+function appIconPath(): string | undefined {
+  const ico = join(import.meta.dirname, "../../build/icon.ico");
+  const png = join(import.meta.dirname, "../../build/icon.png");
+  if (existsSync(ico)) return ico;
+  if (existsSync(png)) return png;
+  return undefined;
+}
 
 /** Pure, testable window options — the security flags are asserted in tests. */
 export function mainWindowOptions(preloadPath: string): BrowserWindowConstructorOptions {
@@ -20,7 +31,7 @@ export function mainWindowOptions(preloadPath: string): BrowserWindowConstructor
     minWidth: 940,
     minHeight: 600,
     show: false,
-    backgroundColor: "#0a0a0f",
+    backgroundColor: "#0b0d13",
     autoHideMenuBar: true,
     webPreferences: {
       preload: preloadPath,
@@ -53,7 +64,11 @@ export function isSameOrigin(target: string, appOrigin: string): boolean {
 
 export function createMainWindow(): BrowserWindow {
   const preloadPath = join(import.meta.dirname, "../preload/index.cjs");
-  const window = new BrowserWindow(mainWindowOptions(preloadPath));
+  const icon = appIconPath();
+  const window = new BrowserWindow({
+    ...mainWindowOptions(preloadPath),
+    ...(icon !== undefined ? { icon } : {}),
+  });
 
   window.on("ready-to-show", () => {
     window.show();

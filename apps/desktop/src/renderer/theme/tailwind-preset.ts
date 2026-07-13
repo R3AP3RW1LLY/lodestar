@@ -1,37 +1,38 @@
 import type { Config } from "tailwindcss";
 
 /**
- * Cockpit-MFD design tokens (SSOT §3.1 visual theme): near-black panels,
- * Elite-orange primary, cyan accents. Consumed by tailwind.config.ts as a
- * preset so tokens live in one place.
+ * LODESTAR design tokens (SSOT §3.1 + brand kit). Faceted-crystal palette:
+ * Elite-orange primary, cyan accent, deep near-black glass. Exact brand hexes
+ * (brand/README.md). Consumed by tailwind.config.ts as a preset so tokens live
+ * in one place; the glass surfaces + gradients live in theme/tokens.css.
  */
 const preset: Omit<Config, "content"> = {
   theme: {
     extend: {
       colors: {
         void: {
-          DEFAULT: "#0a0a0f",
-          900: "#05050a",
-          800: "#0a0a0f",
-          700: "#12121a",
-          600: "#1b1b26",
+          DEFAULT: "#0b0d13",
+          900: "#070809",
+          800: "#0b0d13",
+          700: "#12141d",
+          600: "#1c1f2b",
         },
         orange: {
-          DEFAULT: "#ff7100",
-          bright: "#ff8c2b",
-          dim: "#b34f00",
+          DEFAULT: "#f5731b", // brand primary
+          bright: "#ffa95a", // brand light
+          dim: "#973d0f", // brand deep
         },
         cyan: {
-          DEFAULT: "#00b3d6",
-          bright: "#2be0ff",
-          dim: "#0a7f99",
+          DEFAULT: "#3fddef", // brand accent
+          bright: "#7deaf6",
+          dim: "#17a2c4", // brand deep
         },
         signal: {
-          mine: "#ff7100",
-          skip: "#5a5a6a",
+          mine: "#f5731b",
+          skip: "#6b7180",
           warn: "#ffcc33",
-          danger: "#ff4444",
-          ok: "#33dd88",
+          danger: "#ff5468",
+          ok: "#33dd99",
         },
       },
       fontFamily: {
@@ -39,8 +40,9 @@ const preset: Omit<Config, "content"> = {
         mono: ['"JetBrains Mono"', '"Consolas"', "ui-monospace", "monospace"],
       },
       boxShadow: {
-        glow: "0 0 8px rgba(255,113,0,0.45)",
-        "glow-cyan": "0 0 8px rgba(0,179,214,0.45)",
+        glow: "0 0 12px rgba(245,113,27,0.35)",
+        "glow-cyan": "0 0 12px rgba(63,221,239,0.35)",
+        glass: "0 10px 34px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
       },
     },
   },

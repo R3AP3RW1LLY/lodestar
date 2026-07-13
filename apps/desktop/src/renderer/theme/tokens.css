@@ -8,36 +8,49 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Non-palette tokens only. Palette hexes live once in tailwind-preset.ts and are
-   referenced below via theme() so there is no duplicated source of truth. */
-:root {
-  --lode-scanline: rgba(0, 0, 0, 0.28);
-}
-
 @layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
   body {
     margin: 0;
-    background: theme("colors.void.DEFAULT");
     color: theme("colors.orange.DEFAULT");
     font-family: theme("fontFamily.mono");
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Deep faceted-glass backdrop: base gradient + faint orange/cyan star-glows. */
+    background:
+      radial-gradient(1200px 620px at 12% -12%, rgba(245, 113, 27, 0.1), transparent 60%),
+      radial-gradient(1000px 720px at 112% 8%, rgba(63, 221, 239, 0.08), transparent 55%),
+      linear-gradient(180deg, #0c0e14 0%, #070809 100%);
+    background-attachment: fixed;
   }
 }
 
 @layer utilities {
-  /* Angular clipped panel corners — the MFD signature shape. */
-  .clip-mfd {
-    clip-path: polygon(0 8px, 8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+  /* Frosted-glass surface — the new panel signature (replaces the CRT/MFD look). */
+  .glass {
+    background: linear-gradient(155deg, rgba(30, 34, 48, 0.5) 0%, rgba(13, 15, 21, 0.42) 100%);
+    backdrop-filter: blur(16px) saturate(125%);
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: theme("boxShadow.glass");
   }
-
-  /* Subtle CRT scanline overlay. */
-  .scanlines {
-    background-image: repeating-linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent 2px,
-      var(--lode-scanline) 3px
-    );
+  /* A brighter glass for interactive / accented chrome. */
+  .glass-raised {
+    background: linear-gradient(155deg, rgba(40, 45, 62, 0.6) 0%, rgba(18, 20, 29, 0.5) 100%);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  /* Legacy hook kept for compatibility — now a soft radius, not an angular clip. */
+  .clip-mfd {
+    border-radius: 0.625rem;
+  }
+  .hairline {
+    border-color: rgba(255, 255, 255, 0.08);
   }
 }
 

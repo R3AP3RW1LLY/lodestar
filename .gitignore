@@ -10,6 +10,10 @@ release/
 *.tsbuildinfo
 .turbo/
 
+# ...but the electron-builder resources dir (app icons) IS committed.
+!apps/desktop/build/
+!apps/desktop/build/**
+
 # Test artifacts
 coverage/
 playwright-report/

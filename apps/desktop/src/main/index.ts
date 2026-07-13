@@ -93,6 +93,10 @@ try {
   mkdirSync(dataDir, { recursive: true });
   app.setPath("userData", dataDir);
 
+  // Windows groups the taskbar icon by AppUserModelId — match the packaged appId
+  // so the brand icon shows on the taskbar (and later, in notifications).
+  app.setAppUserModelId("org.lodestar.app");
+
   if (!acquireSingleInstance(app, focusExistingWindow)) {
     // Another instance already owns the lock. This marker lets the e2e test
     // distinguish a correct lock-denial quit from an unrelated crash.
