@@ -159,6 +159,9 @@ importers:
       '@lodestar/data':
         specifier: workspace:*
         version: link:../data
+      '@lodestar/intelligence':
+        specifier: workspace:*
+        version: link:../intelligence
       '@lodestar/shared':
         specifier: workspace:*
         version: link:../shared
