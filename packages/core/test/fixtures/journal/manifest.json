@@ -1,0 +1,126 @@
+{
+  "description": "Synthetic-first journal fixture corpus (SSOT Step 1.1). Hand-authored, PII-free, covering every §5.1 event plus the format edge cases the tailer/watcher must survive. The repo is treated as public from commit #1; every parseable line must satisfy findPiiLeaks() === [] (gated by scrub-journal.test.ts). Real captures may only be added after passing scrubJournalContent().",
+  "sanitizedPiiConstants": {
+    "Commander": "CMDR_LODESTAR_FIXTURE",
+    "FID": "F0000000",
+    "ShipName": "LODESTAR TEST",
+    "ShipIdent": "LS-01"
+  },
+  "requiredEvents": [
+    "ProspectedAsteroid",
+    "AsteroidCracked",
+    "MiningRefined",
+    "LaunchDrone",
+    "SAASignalsFound",
+    "Scan",
+    "Cargo",
+    "MarketSell",
+    "MarketBuy",
+    "Docked",
+    "Undocked",
+    "FSDJump",
+    "SupercruiseEntry",
+    "SupercruiseExit",
+    "Location",
+    "LoadGame",
+    "Loadout",
+    "Music",
+    "CarrierStats",
+    "CarrierJumpRequest",
+    "CarrierJump",
+    "CarrierJumpCancelled",
+    "CarrierTradeOrder",
+    "CarrierDepositFuel",
+    "CargoTransfer"
+  ],
+  "requiredEdges": ["utf8-bom", "partial-last-line", "truncated-midline", "rotation-pair", "in-progress-growth"],
+  "files": [
+    {
+      "name": "Journal.2025-06-01T120000.01.log",
+      "role": "mining session (part 1): load, travel, ring scan, prospect, refine",
+      "isJournalLog": true,
+      "rotationBase": "2025-06-01T120000",
+      "rotationPart": 1,
+      "edges": [],
+      "events": [
+        "Fileheader",
+        "LoadGame",
+        "Loadout",
+        "Music",
+        "Location",
+        "FSDJump",
+        "SupercruiseEntry",
+        "Scan",
+        "SAASignalsFound",
+        "SupercruiseExit",
+        "LaunchDrone",
+        "ProspectedAsteroid",
+        "AsteroidCracked",
+        "MiningRefined",
+        "Cargo"
+      ]
+    },
+    {
+      "name": "Journal.2025-06-01T120000.02.log",
+      "role": "mining session (part 2): relog within 20 min continues the session, then travel + sell",
+      "isJournalLog": true,
+      "rotationBase": "2025-06-01T120000",
+      "rotationPart": 2,
+      "edges": [],
+      "events": [
+        "Fileheader",
+        "LoadGame",
+        "Location",
+        "Cargo",
+        "LaunchDrone",
+        "MiningRefined",
+        "FSDJump",
+        "SupercruiseEntry",
+        "SupercruiseExit",
+        "Docked",
+        "MarketSell",
+        "MarketBuy",
+        "Undocked"
+      ]
+    },
+    {
+      "name": "Journal.2025-06-01T140000.01.log",
+      "role": "carrier events (§5.1, parsed in Phase 8; present now for corpus coverage)",
+      "isJournalLog": true,
+      "rotationBase": "2025-06-01T140000",
+      "rotationPart": 1,
+      "edges": [],
+      "events": [
+        "Fileheader",
+        "CarrierStats",
+        "CarrierJumpRequest",
+        "CarrierJump",
+        "CarrierJumpCancelled",
+        "CarrierTradeOrder",
+        "CarrierDepositFuel",
+        "CargoTransfer"
+      ]
+    },
+    {
+      "name": "edge-bom.log",
+      "role": "UTF-8 BOM prefix on the first line",
+      "isJournalLog": false,
+      "edges": ["utf8-bom"],
+      "events": ["MiningRefined", "Cargo"]
+    },
+    {
+      "name": "edge-partial-last-line.log",
+      "role": "actively-growing file whose final line is a partial write with no trailing newline",
+      "isJournalLog": false,
+      "edges": ["partial-last-line", "in-progress-growth"],
+      "events": ["MiningRefined", "Cargo"]
+    },
+    {
+      "name": "edge-truncated-midline.log",
+      "role": "a malformed, newline-terminated line in the middle, valid lines on either side",
+      "isJournalLog": false,
+      "edges": ["truncated-midline"],
+      "events": ["MiningRefined"]
+    }
+  ]
+}
