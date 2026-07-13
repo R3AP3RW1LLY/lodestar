@@ -51,3 +51,7 @@ export type {
   JournalCursor,
 } from "./engine/index.js";
 export { createLiveEngine } from "./engine/index.js";
+export type { Prospect, ProspectMaterial } from "./journal/events/prospected-asteroid.js";
+export { toProspect } from "./journal/events/prospected-asteroid.js";
+export type { ProspectRepository, StoredProspect } from "./session/prospect-repository.js";
+export { createProspectRepository } from "./session/prospect-repository.js";
