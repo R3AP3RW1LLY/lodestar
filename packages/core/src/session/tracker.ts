@@ -74,6 +74,30 @@ export function initialTracker(): TrackerState {
   return { active: undefined, context: { docked: false }, justEnded: [] };
 }
 
+/**
+ * Rebuild a tracker around a session loaded from persistence (Step 1.9a restart
+ * resume). The working context is seeded from the session's frozen location so
+ * continued mining at the same ring keeps the SAME session rather than starting
+ * a new one; a move to a different ring still opens a fresh session as usual.
+ * NOTE: `docked`/`stationType` are NOT persisted, so they reset to not-docked and
+ * are re-established by the next Docked/Status event — a carrier sell in the brief
+ * window after a restart-while-docked-at-carrier is miscounted as income until then.
+ */
+export function resumeTracker(session: Session): TrackerState {
+  return {
+    active: session,
+    context: {
+      docked: false,
+      ...(session.cmdr !== undefined ? { cmdr: session.cmdr } : {}),
+      ...(session.ship !== undefined ? { ship: session.ship } : {}),
+      ...(session.system !== undefined ? { system: session.system } : {}),
+      ...(session.body !== undefined ? { body: session.body } : {}),
+      ...(session.ring !== undefined ? { ring: session.ring } : {}),
+    },
+    justEnded: [],
+  };
+}
+
 /** "$painite_name;" / "Painite" → "painite". */
 export function normalizeCommodity(raw: string): string {
   return raw

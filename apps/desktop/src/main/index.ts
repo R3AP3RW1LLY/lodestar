@@ -22,6 +22,7 @@ import type { DbService } from "@lodestar/core";
 import { safeStorageBackend, fileSecretStorage } from "./secrets.js";
 import { createSettingsBridge } from "./settings-bridge.js";
 import type { SettingsBridge } from "./settings-bridge.js";
+import { fileJournalCursorStore } from "./journal-cursor.js";
 import { createStateBridge } from "./state-bridge.js";
 import { createWsPushServer } from "./ws-server.js";
 import type { WsPushServer } from "./ws-server.js";
@@ -158,6 +159,7 @@ async function bootstrap(): Promise<void> {
   const engine = createLiveEngine({
     dir: resolveJournalDir(activeBridge),
     logger: log,
+    cursorStore: fileJournalCursorStore(join(dataDir, "journal-cursor.json")),
     ...(repository !== undefined ? { repository } : {}),
   });
 

@@ -1,12 +1,25 @@
 /**
- * Live ingestion engine (SSOT Step 1.9). The runtime assembler that turns
+ * Live ingestion engine (SSOT Step 1.9 / 1.9a). The runtime assembler that turns
  * filesystem journal activity into a live `RootState` + `SessionSummary` stream:
  *
  *   JournalWatcher → parse (§5.1 journal + §5.2 live files) → reduce (RootState)
  *                  → advance (session tracker) → persist → notify subscribers.
  *
- * All I/O is injected (the watcher's `fs`/`makeTailer`, an optional repository),
- * so the whole pipeline is driven deterministically in tests via `tick()`.
+ * All I/O is injected (the watcher's `fs`/`makeTailer`, an optional repository and
+ * cursor store), so the whole pipeline is driven deterministically via `tick()`.
+ *
+ * Restart resume (1.9a): the engine owns the poll loop and persists the tailer
+ * byte position after each tick; on construction it reloads the active session
+ * (`loadActive`) and resumes the journal from the saved cursor, so a CLEAN restart
+ * never re-folds already-consumed lines into duplicate/orphan rows. The cursor is
+ * a best-effort file (not transactional with the DB): a hard crash mid-tick can
+ * leave it lagging the last batch, and if the cursor is lost while an active
+ * session exists the journal starts at its current end (`resumeAtEnd`) rather than
+ * re-folding — bounded exactly-once (cursor inside the DB transaction) is a future
+ * hardening. Transient Context (docked/stationType/soldSomething/cargo) is NOT
+ * persisted: it resets on resume and is re-established by subsequent live events,
+ * so e.g. a carrier sell in the brief window after restart-while-docked can be
+ * miscounted as income until the next Docked/Status event.
  *
  * PII: subscribers only ever receive `RootState` / `SessionSummary`, whose types
  * carry no raw event payloads — `UnknownJournalEvent.payload` (third-party PII)
@@ -18,19 +31,33 @@ import { initialRootState, nullLogger } from "@lodestar/shared";
 import { parseJournalEvent } from "../journal/events/parse.js";
 import { parseCargo, parseStatus } from "../livefiles/index.js";
 import { reduce } from "../state/index.js";
-import { advance, initialTracker, summarize } from "../session/tracker.js";
+import { advance, initialTracker, resumeTracker, summarize } from "../session/tracker.js";
 import type { Session, TrackerState } from "../session/tracker.js";
 import type { SessionRepository } from "../session/repository.js";
 import { JournalWatcher } from "../journal/watcher.js";
-import type { TailerLike, WatcherEvent, WatcherFs, WatcherLogger } from "../journal/watcher.js";
+import type {
+  JournalCursor,
+  TailerLike,
+  WatcherEvent,
+  WatcherFs,
+  WatcherLogger,
+} from "../journal/watcher.js";
+
+/** Persists the journal read position so a restart resumes without re-folding (1.9a). */
+export interface JournalCursorStore {
+  load(): JournalCursor | undefined;
+  save(cursor: JournalCursor): void;
+}
 
 export interface LiveEngineOptions {
   readonly dir: string;
   readonly fs?: WatcherFs;
-  readonly makeTailer?: (name: string, path: string) => TailerLike;
+  readonly makeTailer?: (name: string, path: string, startOffset: number) => TailerLike;
   readonly pollIntervalMs?: number;
   /** Persist sessions as they change; omit for a pure in-memory engine (tests). */
   readonly repository?: SessionRepository;
+  /** Persist/restore the journal read position across restarts (1.9a). */
+  readonly cursorStore?: JournalCursorStore;
   readonly logger?: Logger;
   /** Clock for active-session rate extrapolation; omit for deterministic rates. */
   readonly now?: () => number;
@@ -123,6 +150,13 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     emit(sessionListeners, sessionSummary);
   }
 
+  // Restart resume (1.9a): load the saved journal cursor so the watcher resumes
+  // the current file past already-consumed lines, and reload the active session's
+  // totals so continued mining updates that row instead of inserting a new one. If
+  // an active session exists but the (best-effort) cursor was lost, start the
+  // journal at its current end rather than re-folding it onto the resumed session.
+  const cursor = opts.cursorStore?.load();
+  const resumed = repo?.loadActive();
   const watcher = new JournalWatcher({
     dir: opts.dir,
     emit: ingest,
@@ -130,17 +164,52 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     ...(opts.fs !== undefined ? { fs: opts.fs } : {}),
     ...(opts.makeTailer !== undefined ? { makeTailer: opts.makeTailer } : {}),
     ...(opts.pollIntervalMs !== undefined ? { pollIntervalMs: opts.pollIntervalMs } : {}),
+    ...(cursor !== undefined ? { resumeCursor: cursor } : {}),
+    ...(resumed !== undefined && cursor === undefined ? { resumeAtEnd: true } : {}),
   });
+
+  if (resumed !== undefined) {
+    tracker = resumeTracker(resumed.session);
+    activeId = resumed.id;
+    lastSession = resumed.session;
+    sessionSummary = summarize(resumed.session, opts.now?.());
+  }
+
+  // The engine owns the poll loop so it can persist the cursor after each tick's
+  // batch is fully processed (a line boundary — safe to resume from).
+  let lastCursor: JournalCursor | undefined = cursor;
+  let pollTimer: ReturnType<typeof setInterval> | undefined;
+
+  function saveCursor(): void {
+    const pos = watcher.activePosition();
+    if (pos === undefined) return;
+    if (
+      lastCursor !== undefined &&
+      lastCursor.file === pos.file &&
+      lastCursor.offset === pos.offset
+    )
+      return;
+    lastCursor = pos;
+    opts.cursorStore?.save(pos);
+  }
+
+  function pollOnce(): void {
+    watcher.tick();
+    saveCursor();
+  }
 
   return {
     start: () => {
-      watcher.start();
+      pollOnce();
+      pollTimer = setInterval(pollOnce, opts.pollIntervalMs ?? 100);
+      pollTimer.unref();
     },
     stop: () => {
-      watcher.stop();
+      if (pollTimer !== undefined) clearInterval(pollTimer);
+      pollTimer = undefined;
     },
     tick: () => {
-      watcher.tick();
+      pollOnce();
     },
     state: () => rootState,
     session: () => sessionSummary,
