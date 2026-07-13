@@ -15,7 +15,7 @@ LODESTAR is a desktop mining-intelligence companion for *Elite Dangerous*. **`LO
 - **TDD for every step:** failing test first → implement → refactor. Coverage ≥90% line / ≥85% branch per package.
 - **Adversarial review at every step** before commit: architecture + design + red-team passes over the diff (SSOT §4.8). Blocking findings are fixed first.
 - **Every commit leaves the repo green** (build + lint + test + compliance).
-- Repo: `https://github.com/R3AP3RW1LLY/lodestar` (private, AGPL-3.0-only).
+- Repo: `https://github.com/R3AP3RW1LLY/lodestar` (public, AGPL-3.0-only).
 
 ## Stack & layout
 
