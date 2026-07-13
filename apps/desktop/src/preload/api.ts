@@ -19,6 +19,7 @@ import type {
   StateDelta,
   TtsAudio,
   TtsTestResult,
+  TtsVoiceOption,
   WireResult,
 } from "@lodestar/shared";
 import { isEnvelope } from "@lodestar/shared";
@@ -45,6 +46,8 @@ export interface LodestarApi {
   onSessionStats: (cb: (session: SessionSummary | null) => void) => Unsubscribe;
   /** Settings test-phrase button — synthesize + play a callout, report success. */
   testTts: () => Promise<TtsTestResult>;
+  /** The pinned TTS voice options for the Settings picker. */
+  listVoices: () => Promise<readonly TtsVoiceOption[]>;
   /** Subscribe to synthesized verdict callouts pushed from main (for playback). */
   onTtsAudio: (cb: (audio: TtsAudio) => void) => Unsubscribe;
 }
@@ -61,6 +64,7 @@ export const EXPOSED_API_KEYS = [
   "onStateDelta",
   "onSessionStats",
   "testTts",
+  "listVoices",
   "onTtsAudio",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
@@ -102,6 +106,7 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
         cb(p as SessionSummary | null);
       }),
     testTts: () => call<TtsTestResult>("tts.test"),
+    listVoices: () => call<readonly TtsVoiceOption[]>("tts.voices"),
     onTtsAudio: (cb) =>
       subscribe("tts.audio", (p) => {
         cb(p as TtsAudio);

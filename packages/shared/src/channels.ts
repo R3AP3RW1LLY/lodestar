@@ -51,6 +51,12 @@ export interface TtsTestResult {
   readonly error: string | null;
 }
 
+/** A selectable TTS voice for the Settings picker (id + human label). */
+export interface TtsVoiceOption {
+  readonly id: string;
+  readonly displayName: string;
+}
+
 /** Presence-only view of secrets — booleans, never the secret values. */
 export interface SecretsPresence {
   readonly inaraApiKey: boolean;
@@ -89,6 +95,7 @@ export interface ChannelPayloads {
   // phrase); `tts.audio` is push-only (main→renderer) carrying a callout WAV.
   readonly "tts.test": TtsTestResult;
   readonly "tts.audio": TtsAudio;
+  readonly "tts.voices": readonly TtsVoiceOption[];
 }
 
 const CHANNEL_SET = {
@@ -104,6 +111,7 @@ const CHANNEL_SET = {
   "session.stats": true,
   "tts.test": true,
   "tts.audio": true,
+  "tts.voices": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

@@ -43,6 +43,7 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     listGpus: () => Promise.resolve([]),
     subscribeState: () => initialRootState(),
     testTts: () => Promise.resolve({ ok: true as const, error: null }),
+    listVoices: () => [{ id: "en_US-ryan-high", displayName: "Ryan" }],
     ...over,
   };
 }
@@ -61,6 +62,7 @@ describe("registerIpcHandlers", () => {
       "state.snapshot",
       "system.gpus",
       "tts.test",
+      "tts.voices",
     ]);
   });
 

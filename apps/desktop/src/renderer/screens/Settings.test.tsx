@@ -34,6 +34,10 @@ function stubApi(over: Partial<LodestarApi> = {}): LodestarApi {
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
     testTts: vi.fn().mockResolvedValue({ ok: true, error: null }),
+    listVoices: vi.fn().mockResolvedValue([
+      { id: "en_US-ryan-high", displayName: "Ryan" },
+      { id: "en_US-libritts-high", displayName: "LibriTTS" },
+    ]),
     onTtsAudio: vi.fn(() => () => {}),
     ...over,
   };
@@ -75,6 +79,22 @@ describe("Settings screen", () => {
     await userEvent.click(await screen.findByRole("button", { name: /test voice/i }));
     await waitFor(() => {
       expect(screen.getByTestId("tts-note")).toHaveTextContent(/failed/i);
+    });
+  });
+
+  it("TTS: the voice picker lists options and persists the chosen voice", async () => {
+    const setSetting = vi
+      .fn()
+      .mockResolvedValue({ ...BASE_SETTINGS, ttsVoice: "en_US-libritts-high" });
+    stubApi({ setSetting });
+    render(<Settings />);
+    const picker = await screen.findByLabelText(/tts voice/i);
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: /libritts/i })).toBeInTheDocument();
+    });
+    fireEvent.change(picker, { target: { value: "en_US-libritts-high" } });
+    await waitFor(() => {
+      expect(setSetting).toHaveBeenCalledWith({ key: "ttsVoice", value: "en_US-libritts-high" });
     });
   });
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { SecretsPresence, SettingsSnapshot } from "@lodestar/shared";
+import type { SecretsPresence, SettingsSnapshot, TtsVoiceOption } from "@lodestar/shared";
 import { MfdPanel } from "../components/MfdPanel.js";
 import { MfdButton } from "../components/MfdButton.js";
 
@@ -30,12 +30,14 @@ export function Settings(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
   const [ttsNote, setTtsNote] = useState<string | null>(null);
+  const [voices, setVoices] = useState<readonly TtsVoiceOption[]>([]);
 
   useEffect(() => {
     void (async () => {
       try {
         setSettings(await window.lodestar.getSettings());
         setPresence(await window.lodestar.getSecretsPresence());
+        setVoices(await window.lodestar.listVoices());
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : String(cause));
       }
@@ -212,12 +214,25 @@ export function Settings(): React.JSX.Element {
           />
           <span className="text-orange">Enable mine/skip callouts</span>
         </label>
-        <div className="mt-2 flex flex-col gap-1">
+        <label className="mt-2 flex flex-col gap-1">
           <span className="text-cyan">Voice</span>
-          <span className="text-orange" data-testid="tts-voice">
-            {settings.ttsVoice}
-          </span>
-        </div>
+          <select
+            className="bg-void-900 p-1 text-orange"
+            value={settings.ttsVoice}
+            aria-label="TTS voice"
+            data-testid="tts-voice"
+            onChange={(e) => {
+              void save("ttsVoice", e.target.value);
+            }}
+          >
+            {voices.length === 0 && <option value={settings.ttsVoice}>{settings.ttsVoice}</option>}
+            {voices.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="mt-2 flex flex-col gap-1">
           <span className="text-cyan">Volume {String(Math.round(settings.ttsVolume * 100))}%</span>
           <input
