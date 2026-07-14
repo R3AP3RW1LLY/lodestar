@@ -7,6 +7,7 @@
 
 import { app, dialog, globalShortcut, ipcMain, BrowserWindow } from "electron";
 import { appendFileSync, mkdirSync } from "node:fs";
+import { writeFile as fsWriteFile } from "node:fs/promises";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { APP_VERSION, envelope } from "@lodestar/shared";
@@ -41,6 +42,8 @@ import { VOICE_CATALOG } from "@lodestar/voice";
 import { createTtsService } from "./tts-service.js";
 import { wireAssay } from "./assay-wiring.js";
 import type { AssayWiring } from "./assay-wiring.js";
+import { createAnalyticsExporter } from "./analytics-export.js";
+import type { AnalyticsExporter } from "./analytics-export.js";
 import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
@@ -307,6 +310,24 @@ async function bootstrap(): Promise<void> {
     });
   }
 
+  // CSV export (Step 3.6): builds the dataset, shows the native save dialog, writes.
+  const analyticsExporter: AnalyticsExporter | undefined =
+    dbService.status() === "ok"
+      ? createAnalyticsExporter({
+          db: dbService.db,
+          showSaveDialog: async (defaultName) => {
+            const r = await dialog.showSaveDialog(window, {
+              defaultPath: defaultName,
+              filters: [{ name: "CSV", extensions: ["csv"] }],
+            });
+            // Electron always returns a filePath string ("" when cancelled); the
+            // service keys off `canceled`, so pass it straight through.
+            return { canceled: r.canceled, filePath: r.filePath };
+          },
+          writeFile: (path, content) => fsWriteFile(path, content, "utf8"),
+        })
+      : undefined;
+
   registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
@@ -328,6 +349,10 @@ async function bootstrap(): Promise<void> {
       setOverlayLocked(!overlayLocked);
       return { locked: overlayLocked };
     },
+    exportAnalytics: (req) =>
+      analyticsExporter !== undefined
+        ? analyticsExporter.export(req.kind, req.bom)
+        : Promise.resolve({ ok: false, path: null }),
   });
 
   engine.start();

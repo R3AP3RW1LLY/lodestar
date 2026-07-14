@@ -7,6 +7,8 @@
  */
 
 import type {
+  AnalyticsExportRequest,
+  AnalyticsExportResult,
   AppHealth,
   AssayVerdictEvent,
   Channel,
@@ -59,6 +61,8 @@ export interface LodestarApi {
   toggleOverlay: () => Promise<OverlayToggleResult>;
   /** Toggle the overlay lock (click-through ⇄ arrange); resolves with its new mode. */
   lockOverlay: () => Promise<OverlayMode>;
+  /** Export an analytics dataset to CSV via a native save dialog. */
+  exportAnalytics: (req: AnalyticsExportRequest) => Promise<AnalyticsExportResult>;
 }
 
 export const EXPOSED_API_KEYS = [
@@ -78,6 +82,7 @@ export const EXPOSED_API_KEYS = [
   "onAssayVerdict",
   "toggleOverlay",
   "lockOverlay",
+  "exportAnalytics",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
 function unwrap<T>(wire: WireResult<T>): T {
@@ -129,5 +134,6 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
       }),
     toggleOverlay: () => call<OverlayToggleResult>("overlay.toggle"),
     lockOverlay: () => call<OverlayMode>("overlay.lock"),
+    exportAnalytics: (req) => call<AnalyticsExportResult>("analytics.export", req),
   };
 }

@@ -73,6 +73,19 @@ export interface OverlayMode {
   readonly locked: boolean;
 }
 
+/** Request to export an analytics dataset to CSV via a native save dialog (Step 3.6). */
+export interface AnalyticsExportRequest {
+  readonly kind: "sessions" | "refinements" | "prospects";
+  /** Prepend a UTF-8 BOM (Excel-friendly). */
+  readonly bom: boolean;
+}
+
+/** Result of a CSV export — written path, or ok:false when the user cancelled. */
+export interface AnalyticsExportResult {
+  readonly ok: boolean;
+  readonly path: string | null;
+}
+
 /** Presence-only view of secrets — booleans, never the secret values. */
 export interface SecretsPresence {
   readonly inaraApiKey: boolean;
@@ -122,6 +135,9 @@ export interface ChannelPayloads {
   // hides its move/resize chrome.
   readonly "overlay.lock": OverlayMode;
   readonly "overlay.mode": OverlayMode;
+  // Step 3.6 — Manifest CSV export (invoke; request carries the dataset kind + BOM,
+  // the reply the written path or a cancel).
+  readonly "analytics.export": AnalyticsExportResult;
 }
 
 const CHANNEL_SET = {
@@ -142,6 +158,7 @@ const CHANNEL_SET = {
   "overlay.toggle": true,
   "overlay.lock": true,
   "overlay.mode": true,
+  "analytics.export": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

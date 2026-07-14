@@ -35,3 +35,11 @@ export type {
   PersonalBestsStore,
 } from "./personal-bests.js";
 export { BEST_CATEGORIES, createPersonalBestsStore, sessionBestValues } from "./personal-bests.js";
+export type {
+  CsvValue,
+  CsvOptions,
+  ExportKind,
+  RefinementExportRow,
+  ProspectExportRow,
+} from "./csv-export.js";
+export { toCsv, parseCsv, sessionsCsv, refinementsCsv, prospectsCsv } from "./csv-export.js";

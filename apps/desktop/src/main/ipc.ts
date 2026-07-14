@@ -6,6 +6,8 @@
  */
 
 import type {
+  AnalyticsExportRequest,
+  AnalyticsExportResult,
   AppHealth,
   Channel,
   GpuInfo,
@@ -64,6 +66,8 @@ export interface IpcDeps {
   readonly toggleOverlay: () => OverlayToggleResult;
   /** Command Deck overlay lock toggle: lock (click-through) ⇄ unlock (arrange), report new mode. */
   readonly lockOverlay: () => OverlayMode;
+  /** Manifest CSV export: build the dataset, show a save dialog, write the file. */
+  readonly exportAnalytics: (req: AnalyticsExportRequest) => Promise<AnalyticsExportResult>;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -125,5 +129,24 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
 
   ipcMain.handle("overlay.lock", (): WireResult<OverlayMode> =>
     toWireResult(ok(deps.lockOverlay())),
+  );
+
+  ipcMain.handle(
+    "analytics.export",
+    async (raw: unknown): Promise<WireResult<AnalyticsExportResult>> => {
+      const kind = (raw as { kind?: unknown } | null)?.kind;
+      if (kind !== "sessions" && kind !== "refinements" && kind !== "prospects") {
+        return toWireResult(
+          err(
+            domainError(
+              "ipc.bad-args",
+              "analytics.export requires kind ∈ sessions|refinements|prospects",
+            ),
+          ),
+        );
+      }
+      const bom = (raw as { bom?: unknown }).bom === true;
+      return toWireResult(ok(await deps.exportAnalytics({ kind, bom })));
+    },
   );
 }

@@ -30,6 +30,8 @@ export type {
   TtsVoiceOption,
   OverlayToggleResult,
   OverlayMode,
+  AnalyticsExportRequest,
+  AnalyticsExportResult,
   ChannelPayloads,
   Channel,
   Envelope,
