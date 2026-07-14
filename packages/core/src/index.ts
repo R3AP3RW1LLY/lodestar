@@ -90,5 +90,8 @@ export type {
   CommodityTons,
   TrendPoint,
   AnalyticsRepository,
+  BreakdownRow,
+  PairingRow,
+  Breakdowns,
 } from "./analytics/index.js";
 export { createAnalyticsRepository } from "./analytics/index.js";
