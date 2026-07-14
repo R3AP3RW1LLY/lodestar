@@ -39,3 +39,14 @@ export {
 } from "./gateway/cache.js";
 export type { ApiClient, ApiClientDeps, ApiRequest, ApiResponse } from "./gateway/client.js";
 export { createApiClient } from "./gateway/client.js";
+export type { EdsmSystem, EdsmRing, EdsmBody, EdsmSystemBodies } from "./edsm/parse.js";
+export {
+  parseEdsmSystems,
+  parseEdsmBodies,
+  normalizeEdsmRingType,
+  normalizeEdsmReserve,
+} from "./edsm/parse.js";
+export type { EdsmClient } from "./edsm/client.js";
+export { createEdsmClient, EDSM_MAX_RADIUS_LY } from "./edsm/client.js";
+export type { GalaxyRepos, BodyEnrichResult } from "./edsm/enrich.js";
+export { enrichSystemsFromEdsm, enrichBodiesFromEdsm } from "./edsm/enrich.js";
