@@ -32,6 +32,32 @@ import { assembleBreakdowns } from "./breakdowns.js";
 import type { Breakdowns, SessionBreakdownInput } from "./breakdowns.js";
 import { ringCommodityHeatmap, timeProductivityHeatmap } from "./heatmaps.js";
 import type { Heatmaps, YieldInput } from "./heatmaps.js";
+import { aggregateLimpets, sessionLimpets } from "./limpets.js";
+import type { LimpetTotals, SessionLimpetEfficiency } from "./limpets.js";
+import { aggregateTimeSplit, sessionTimeSplit } from "./time-split.js";
+import type { SessionTimeSplit, TimeSplitTotals } from "./time-split.js";
+
+/** A session's logged events (seeks `session_events` via its index). */
+export const SESSION_EVENTS_SQL =
+  "SELECT event_type AS eventType, payload, timestamp FROM session_events WHERE session_id = @id ORDER BY seq";
+
+interface SessionEventRow {
+  readonly eventType: string;
+  readonly payload: string;
+  readonly timestamp: string;
+}
+
+/** Per-session limpet efficiency + mining/other time split, with pooled totals. */
+export interface SessionEfficiency {
+  readonly limpets: {
+    readonly perSession: readonly ({ readonly sessionId: number } & SessionLimpetEfficiency)[];
+    readonly totals: LimpetTotals;
+  };
+  readonly timeSplit: {
+    readonly perSession: readonly ({ readonly sessionId: number } & SessionTimeSplit)[];
+    readonly totals: TimeSplitTotals;
+  };
+}
 
 const PROSPECTED_SUB = "(SELECT COUNT(*) FROM prospects p WHERE p.session_id = s.id)";
 const MINE_SUB =
@@ -95,6 +121,8 @@ export interface AnalyticsRepository {
   breakdowns: (filter?: SessionFilter) => Breakdowns;
   /** Time-productivity (day×hour) + ring×commodity yield heatmaps. */
   heatmaps: (filter?: SessionFilter) => Heatmaps;
+  /** Per-session limpet efficiency + mining/other time split + totals (Step 3.7). */
+  sessionEfficiency: (filter?: SessionFilter) => SessionEfficiency;
 }
 
 export function createAnalyticsRepository(db: Db): AnalyticsRepository {
@@ -148,6 +176,20 @@ export function createAnalyticsRepository(db: Db): AnalyticsRepository {
           })),
         ),
         ringCommodityYield: ringCommodityHeatmap(yields),
+      };
+    },
+    sessionEfficiency: (filter = {}) => {
+      const eventsStmt = db.prepare(SESSION_EVENTS_SQL);
+      const limpetRows: ({ sessionId: number } & SessionLimpetEfficiency)[] = [];
+      const splitRows: ({ sessionId: number } & SessionTimeSplit)[] = [];
+      for (const s of list(filter)) {
+        const events = eventsStmt.all({ id: s.id }) as SessionEventRow[];
+        limpetRows.push({ sessionId: s.id, ...sessionLimpets(events, s.tonsRefined) });
+        splitRows.push({ sessionId: s.id, ...sessionTimeSplit(events, s.startedAt, s.endedAt) });
+      }
+      return {
+        limpets: { perSession: limpetRows, totals: aggregateLimpets(limpetRows) },
+        timeSplit: { perSession: splitRows, totals: aggregateTimeSplit(splitRows) },
       };
     },
     sessionDetail: (id) => {

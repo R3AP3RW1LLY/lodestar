@@ -43,3 +43,8 @@ export type {
   ProspectExportRow,
 } from "./csv-export.js";
 export { toCsv, parseCsv, sessionsCsv, refinementsCsv, prospectsCsv } from "./csv-export.js";
+export type { SessionEfficiency } from "./repository.js";
+export type { LimpetEventInput, SessionLimpetEfficiency, LimpetTotals } from "./limpets.js";
+export { sessionLimpets, aggregateLimpets } from "./limpets.js";
+export type { TimeSplitEventInput, SessionTimeSplit, TimeSplitTotals } from "./time-split.js";
+export { sessionTimeSplit, aggregateTimeSplit } from "./time-split.js";
