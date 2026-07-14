@@ -11,6 +11,7 @@ import type {
   AssayVerdictEvent,
   Channel,
   GpuInfo,
+  OverlayToggleResult,
   RootState,
   SecretsPresence,
   SecretsSetRequest,
@@ -53,6 +54,8 @@ export interface LodestarApi {
   onTtsAudio: (cb: (audio: TtsAudio) => void) => Unsubscribe;
   /** Subscribe to Assay verdicts pushed from main (for the Assay dashboard). */
   onAssayVerdict: (cb: (verdict: AssayVerdictEvent) => void) => Unsubscribe;
+  /** Toggle the in-game overlay window; resolves with its new visibility. */
+  toggleOverlay: () => Promise<OverlayToggleResult>;
 }
 
 export const EXPOSED_API_KEYS = [
@@ -70,6 +73,7 @@ export const EXPOSED_API_KEYS = [
   "listVoices",
   "onTtsAudio",
   "onAssayVerdict",
+  "toggleOverlay",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
 function unwrap<T>(wire: WireResult<T>): T {
@@ -119,5 +123,6 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
       subscribe("assay.verdict", (p) => {
         cb(p as AssayVerdictEvent);
       }),
+    toggleOverlay: () => call<OverlayToggleResult>("overlay.toggle"),
   };
 }

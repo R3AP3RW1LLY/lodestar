@@ -1,0 +1,26 @@
+{
+  "name": "@lodestar/overlay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only, transparent, click-through in-game HUD: Assay verdicts + cargo %. Subscribes to the loopback WS push server (token-authenticated); displays only — never any input to the game.",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@lodestar/shared": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.1",
+    "jsdom": "^29.1.1"
+  }
+}

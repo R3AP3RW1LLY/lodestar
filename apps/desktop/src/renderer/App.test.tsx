@@ -44,6 +44,7 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
     ]),
     onTtsAudio: vi.fn(() => () => {}),
     onAssayVerdict: vi.fn(() => () => {}),
+    toggleOverlay: vi.fn().mockResolvedValue({ visible: false }),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;

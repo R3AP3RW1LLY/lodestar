@@ -182,6 +182,22 @@ export default tseslint.config(
     },
   },
   {
+    // Sanctioned LOOPBACK WebSocket client (SSOT §5.4/§5.6, Step 2.10): the overlay
+    // connects ONLY to our own 127.0.0.1 push server, token-authenticated. Re-permit
+    // just the `WebSocket` global here — fetch/XHR and raw node sockets stay banned.
+    files: ["packages/overlay/src/ws/**/*.ts"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "fetch",
+          message: "Route HTTP through the egress gateway (@lodestar/integrations), not raw fetch.",
+        },
+        { name: "XMLHttpRequest", message: "Route HTTP through the egress gateway, not XHR." },
+      ],
+    },
+  },
+  {
     files: ["**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",

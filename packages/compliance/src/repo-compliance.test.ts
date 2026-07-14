@@ -114,8 +114,10 @@ describe("compliance: egress confinement (source scan)", () => {
 
   it("no product source uses raw sockets/fetch outside the sanctioned gateway/downloader", () => {
     // Paths are relative to each scanned group root (e.g. `packages`), so the
-    // sanctioned dirs are named WITHOUT the group prefix.
-    const skipPaths = ["integrations/src/gateway", "integrations/src/downloader"];
+    // sanctioned dirs are named WITHOUT the group prefix. `overlay/src/ws` is the
+    // loopback WebSocket client (Step 2.10): it connects only to our own 127.0.0.1
+    // push server, token-authenticated — the sole sanctioned browser-WS consumer.
+    const skipPaths = ["integrations/src/gateway", "integrations/src/downloader", "overlay/src/ws"];
     const findings = ["packages", "apps", "services"].flatMap((group) =>
       scanTree(join(REPO_ROOT, group), { extensions: SRC_EXT, skipPaths }, findRawSocketUsage),
     );

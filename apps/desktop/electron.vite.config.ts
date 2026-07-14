@@ -27,17 +27,28 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ exclude: ["@lodestar/shared"] })],
     build: {
       outDir: outDir("preload"),
-      // Sandboxed preloads must be CommonJS.
-      lib: { entry: resolve(import.meta.dirname, "src/preload/index.ts"), formats: ["cjs"] },
-      rollupOptions: { output: { entryFileNames: "index.cjs" } },
+      // Sandboxed preloads must be CommonJS. Two entries: the main-window bridge
+      // and the overlay bridge (Step 2.10, exposes only the WS connection info).
+      lib: {
+        entry: {
+          index: resolve(import.meta.dirname, "src/preload/index.ts"),
+          overlay: resolve(import.meta.dirname, "src/preload/overlay.ts"),
+        },
+        formats: ["cjs"],
+      },
+      rollupOptions: { output: { entryFileNames: "[name].cjs" } },
     },
   },
   renderer: {
     root: resolve(import.meta.dirname, "src/renderer"),
     build: {
       outDir: outDir("renderer"),
+      // Two HTML entries: the main app window and the transparent overlay window.
       rollupOptions: {
-        input: resolve(import.meta.dirname, "src/renderer/index.html"),
+        input: {
+          index: resolve(import.meta.dirname, "src/renderer/index.html"),
+          overlay: resolve(import.meta.dirname, "src/renderer/overlay.html"),
+        },
       },
     },
     plugins: [react()],

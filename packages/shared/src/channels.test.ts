@@ -8,6 +8,7 @@ describe("IPC channels", () => {
       "app.health",
       "assay.verdict",
       "journal.autodetect",
+      "overlay.toggle",
       "secrets.presence",
       "secrets.set",
       "session.stats",

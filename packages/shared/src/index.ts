@@ -28,6 +28,7 @@ export type {
   TtsAudio,
   TtsTestResult,
   TtsVoiceOption,
+  OverlayToggleResult,
   ChannelPayloads,
   Channel,
   Envelope,

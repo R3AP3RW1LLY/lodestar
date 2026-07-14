@@ -22,6 +22,7 @@
     "@lodestar/core": "workspace:*",
     "@lodestar/data": "workspace:*",
     "@lodestar/integrations": "workspace:*",
+    "@lodestar/overlay": "workspace:*",
     "@lodestar/shared": "workspace:*",
     "@lodestar/voice": "workspace:*",
     "better-sqlite3": "^12.11.1",

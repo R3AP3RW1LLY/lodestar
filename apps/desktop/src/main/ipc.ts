@@ -9,6 +9,7 @@ import type {
   AppHealth,
   Channel,
   GpuInfo,
+  OverlayToggleResult,
   RootState,
   SecretsPresence,
   SecretsSetRequest,
@@ -58,6 +59,8 @@ export interface IpcDeps {
   readonly testTts: () => Promise<TtsTestResult>;
   /** The pinned TTS voice options for the Settings picker. */
   readonly listVoices: () => readonly TtsVoiceOption[];
+  /** Command Deck overlay toggle: show/hide the in-game overlay, report new visibility. */
+  readonly toggleOverlay: () => OverlayToggleResult;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -111,5 +114,9 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
 
   ipcMain.handle("tts.voices", (): WireResult<readonly TtsVoiceOption[]> =>
     toWireResult(ok(deps.listVoices())),
+  );
+
+  ipcMain.handle("overlay.toggle", (): WireResult<OverlayToggleResult> =>
+    toWireResult(ok(deps.toggleOverlay())),
   );
 }

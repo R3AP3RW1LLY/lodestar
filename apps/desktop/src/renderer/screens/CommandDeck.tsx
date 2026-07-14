@@ -76,7 +76,15 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-5 p-5">
-      <ScreenHeader title="Command Deck" trailing={<DeckStatusBadge status={status} now={now} />} />
+      <ScreenHeader
+        title="Command Deck"
+        trailing={
+          <div className="flex items-center gap-3">
+            <OverlayToggleButton />
+            <DeckStatusBadge status={status} now={now} />
+          </div>
+        }
+      />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <PanelSlot index={0} className="lg:col-span-8">
           <SituationPanel activity={state.activity} location={state.location} flags={state.flags} />
@@ -95,6 +103,35 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
         </PanelSlot>
       </div>
     </div>
+  );
+}
+
+/**
+ * Toggles the in-game overlay (Step 2.10) via IPC and reflects its state in the
+ * label. The overlay itself is WS-only; this button just asks main to show/hide it.
+ */
+function OverlayToggleButton(): React.JSX.Element {
+  const [visible, setVisible] = useState<boolean | null>(null);
+  const onClick = (): void => {
+    window.lodestar
+      .toggleOverlay()
+      .then((r) => {
+        setVisible(r.visible);
+      })
+      .catch(() => {
+        /* toggle failed (overlay unavailable) — leave the label unchanged */
+      });
+  };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid="overlay-toggle"
+      aria-pressed={visible ?? false}
+      className="clip-mfd border border-white/10 px-2.5 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-cyan/80 transition-colors hover:border-cyan/40 hover:text-cyan"
+    >
+      Overlay{visible === null ? "" : visible ? " · on" : " · off"}
+    </button>
   );
 }
 

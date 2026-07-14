@@ -5,12 +5,12 @@
  * Command Deck window.
  */
 
-import { app, dialog, ipcMain, BrowserWindow } from "electron";
+import { app, dialog, globalShortcut, ipcMain, BrowserWindow } from "electron";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import { APP_VERSION, envelope } from "@lodestar/shared";
-import type { Logger } from "@lodestar/shared";
+import type { AssayVerdictEvent, Envelope, Logger } from "@lodestar/shared";
 import {
   createDbService,
   createSettingsService,
@@ -30,6 +30,8 @@ import type { WsPushServer } from "./ws-server.js";
 import { listGpus } from "./gpu.js";
 import { acquireSingleInstance } from "./app-lifecycle.js";
 import { createMainWindow } from "./windows.js";
+import { createOverlayWindow } from "./overlay-window.js";
+import type { OverlayHandle } from "./overlay-window.js";
 import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import { buildHealth } from "./health.js";
 import { createLogger, createRollingDestination } from "./logger.js";
@@ -45,6 +47,7 @@ let logger: Logger | undefined;
 let dbService: DbService | undefined;
 let bridge: SettingsBridge | undefined;
 let wsServer: WsPushServer | undefined;
+let overlay: OverlayHandle | undefined;
 
 /**
  * Where the live engine watches: an explicit override (used by e2e + power users
@@ -173,12 +176,41 @@ async function bootstrap(): Promise<void> {
     ...(repository !== undefined ? { repository } : {}),
   });
 
+  // The latest Assay verdict, kept so a late-joining overlay (WS-only, no IPC) can
+  // be shown it the instant it connects — not left blank until the next prospect.
+  let latestVerdict: AssayVerdictEvent | null = null;
+
   const wsToken = randomBytes(32).toString("hex");
-  wsServer = await createWsPushServer({ token: wsToken, logger: log });
+  wsServer = await createWsPushServer({
+    token: wsToken,
+    logger: log,
+    // Prime a newly-connected client with the current full state (its delta
+    // baseline) and the latest verdict, before any broadcast reaches it.
+    onConnect: () => {
+      const primer: Envelope[] = [envelope("state.snapshot", engine.state())];
+      if (latestVerdict !== null) primer.push(envelope("assay.verdict", latestVerdict));
+      return primer;
+    },
+  });
   const ws = wsServer;
 
   mainWindow = createMainWindow();
   const window = mainWindow;
+
+  // The in-game overlay (Step 2.10): a transparent, click-through window that
+  // subscribes to the loopback WS server (token in argv → its preload → WS
+  // subprotocol; never IPC). Created hidden; toggled from the Command Deck or the
+  // global shortcut. Game must run borderless-windowed (docs/verification/phase-2.md).
+  overlay = createOverlayWindow({ wsPort: ws.port, wsToken, logger: log });
+  const overlayHandle = overlay;
+  const overlayAccelerator = "CommandOrControl+Shift+O";
+  const shortcutRegistered = globalShortcut.register(overlayAccelerator, () => {
+    overlayHandle.toggle();
+  });
+  if (!shortcutRegistered) {
+    // Another app owns the accelerator; the Command Deck button still toggles it.
+    log.warn("overlay.shortcut-unavailable", { accelerator: overlayAccelerator });
+  }
 
   // Prospector statistics (Step 2.8): the session.stats push is enriched with live
   // stats recomputed from the active session's persisted prospects.
@@ -217,12 +249,14 @@ async function bootstrap(): Promise<void> {
       engine,
       db: dbService.db,
       onVerdict: (verdict) => {
+        latestVerdict = verdict;
         ttsService.onVerdict(verdict);
         stateBridge.touchSession(); // stream the updated prospector stats
-        // Push the verdict to the Assay dashboard (Step 2.9).
-        if (!window.isDestroyed()) {
-          window.webContents.send("assay.verdict", envelope("assay.verdict", verdict));
-        }
+        // Push the verdict to the Assay dashboard (IPC, Step 2.9) AND the overlay
+        // (WS broadcast, Step 2.10).
+        const env = envelope("assay.verdict", verdict);
+        if (!window.isDestroyed()) window.webContents.send("assay.verdict", env);
+        ws.broadcast(env);
       },
       logger: log,
     });
@@ -244,14 +278,17 @@ async function bootstrap(): Promise<void> {
     subscribeState: () => stateBridge.snapshot(),
     testTts: () => ttsService.test(),
     listVoices: () => VOICE_CATALOG,
+    toggleOverlay: () => ({ visible: overlayHandle.toggle() }),
   });
 
   engine.start();
 
   app.on("will-quit", () => {
+    globalShortcut.unregisterAll();
     engine.stop();
     stateBridge.stop();
     assayWiring?.dispose();
+    overlayHandle.destroy();
     void ws.close();
     dbService?.close();
   });

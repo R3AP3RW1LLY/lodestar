@@ -10,6 +10,7 @@
  */
 
 import { WebSocketServer } from "ws";
+import type { WebSocket } from "ws";
 import { timingSafeEqual } from "node:crypto";
 import type { Envelope } from "@lodestar/shared";
 
@@ -34,6 +35,13 @@ export interface WsServerDeps {
   readonly token: string;
   readonly port?: number;
   readonly logger?: WsServerLogger;
+  /**
+   * Envelopes to send to a newly-connected client, in order, before any broadcast
+   * (Step 2.10). A late-joining overlay has no baseline for the delta stream, so
+   * this hands it the current `state.snapshot` (+ the latest verdict) first. Called
+   * once per connection; a throw is isolated so one bad connect can't wedge others.
+   */
+  readonly onConnect?: () => readonly Envelope[];
 }
 
 export interface WsPushServer {
@@ -74,8 +82,19 @@ export function createWsPushServer(deps: WsServerDeps): Promise<WsPushServer> {
 
   return new Promise<WsPushServer>((resolve, reject) => {
     wss.on("error", reject);
-    wss.on("connection", () => {
+    wss.on("connection", (client: WebSocket) => {
       deps.logger?.info("ws.client-connected", { clients: wss.clients.size });
+      // Prime the late-joiner with the current snapshot before any broadcast can
+      // reach it. Node runs this handler to completion before any timer-driven
+      // broadcast, so these frames are always first in this client's stream.
+      try {
+        const primer = deps.onConnect?.() ?? [];
+        for (const env of primer) {
+          if (client.readyState === client.OPEN) client.send(JSON.stringify(env));
+        }
+      } catch (error) {
+        deps.logger?.warn("ws.onconnect-failed", { error: String(error) });
+      }
     });
 
     wss.on("listening", () => {

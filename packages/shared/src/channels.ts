@@ -58,6 +58,11 @@ export interface TtsVoiceOption {
   readonly displayName: string;
 }
 
+/** Result of toggling the in-game overlay window (Step 2.10) — its new visibility. */
+export interface OverlayToggleResult {
+  readonly visible: boolean;
+}
+
 /** Presence-only view of secrets — booleans, never the secret values. */
 export interface SecretsPresence {
   readonly inaraApiKey: boolean;
@@ -99,6 +104,9 @@ export interface ChannelPayloads {
   readonly "tts.voices": readonly TtsVoiceOption[];
   // Step 2.9 — Assay verdicts pushed to the renderer (main→renderer) for the dashboard.
   readonly "assay.verdict": AssayVerdictEvent;
+  // Step 2.10 — Command Deck asks main to toggle the in-game overlay (invoke); the
+  // reply carries the overlay's new visibility.
+  readonly "overlay.toggle": OverlayToggleResult;
 }
 
 const CHANNEL_SET = {
@@ -116,6 +124,7 @@ const CHANNEL_SET = {
   "tts.audio": true,
   "tts.voices": true,
   "assay.verdict": true,
+  "overlay.toggle": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

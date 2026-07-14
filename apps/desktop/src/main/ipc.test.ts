@@ -44,17 +44,19 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     subscribeState: () => initialRootState(),
     testTts: () => Promise.resolve({ ok: true as const, error: null }),
     listVoices: () => [{ id: "en_US-ryan-high", displayName: "Ryan" }],
+    toggleOverlay: () => ({ visible: true }),
     ...over,
   };
 }
 
 describe("registerIpcHandlers", () => {
-  it("registers exactly the invoke channels through Step 2.7b", () => {
+  it("registers exactly the invoke channels through Step 2.10", () => {
     const ipc = fakeIpcMain();
     registerIpcHandlers(ipc, deps());
     expect([...ipc.handlers.keys()].sort()).toEqual([
       "app.health",
       "journal.autodetect",
+      "overlay.toggle",
       "secrets.presence",
       "secrets.set",
       "settings.get",
@@ -64,6 +66,15 @@ describe("registerIpcHandlers", () => {
       "tts.test",
       "tts.voices",
     ]);
+  });
+
+  it("overlay.toggle returns the new overlay visibility in a success envelope", async () => {
+    const ipc = fakeIpcMain();
+    registerIpcHandlers(ipc, deps({ toggleOverlay: () => ({ visible: false }) }));
+    const result = (await ipc.handlers.get("overlay.toggle")?.({})) as WireResult<{
+      visible: boolean;
+    }>;
+    expect(result).toEqual({ ok: true, value: { visible: false } });
   });
 
   it("state.snapshot returns the current root state in a success envelope", async () => {

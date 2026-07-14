@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
-import { envelope } from "@lodestar/shared";
+import { envelope, initialRootState } from "@lodestar/shared";
 import type { Envelope } from "@lodestar/shared";
 import { createWsPushServer } from "./ws-server.js";
 import type { WsPushServer } from "./ws-server.js";
@@ -104,6 +104,35 @@ describe("createWsPushServer", () => {
     server.broadcast(envelope("session.stats", null));
     expect(logs.join("\n")).not.toContain(TOKEN);
     expect(logs.some((l) => l.startsWith("ws.listening"))).toBe(true);
+  });
+
+  it("primes a newly-connected client with the onConnect envelopes before any broadcast", async () => {
+    const snapshot = envelope("state.snapshot", initialRootState());
+    server = await createWsPushServer({ token: TOKEN, onConnect: () => [snapshot] });
+    const ws = connect(server.port, [TOKEN]);
+    // Attach the message listener synchronously (before any await) so the primer,
+    // which the server sends the instant the connection opens, is never missed.
+    const first = nextMessage(ws);
+    expect(await handshake(ws)).toBe("open");
+    expect(await first).toMatchObject({ channel: "state.snapshot" });
+  });
+
+  it("survives an onConnect that throws (one bad connect never wedges the server)", async () => {
+    const logs: string[] = [];
+    server = await createWsPushServer({
+      token: TOKEN,
+      logger: { info: () => {}, warn: (m) => logs.push(m) },
+      onConnect: () => {
+        throw new Error("boom");
+      },
+    });
+    const ws = connect(server.port, [TOKEN]);
+    expect(await handshake(ws)).toBe("open");
+    // Handshake still succeeds and a subsequent broadcast is still delivered.
+    const got = nextMessage(ws);
+    server.broadcast(envelope("session.stats", null));
+    expect(await got).toMatchObject({ channel: "session.stats" });
+    expect(logs).toContain("ws.onconnect-failed");
   });
 
   it("binds a requested explicit port when one is provided", async () => {

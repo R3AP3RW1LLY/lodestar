@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { initialRootState } from "@lodestar/shared";
 import type { RootState, SessionSummary } from "@lodestar/shared";
@@ -15,6 +15,7 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     getStateSnapshot: vi.fn(() => new Promise<RootState>(() => {})),
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
+    toggleOverlay: vi.fn().mockResolvedValue({ visible: true }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }
@@ -104,6 +105,17 @@ describe("CommandDeck", () => {
     expect(status.textContent).toContain("Game Offline");
     expect(screen.getByText("python")).toBeInTheDocument(); // last-known still shown
     expect(screen.getByTestId("session-empty")).toBeInTheDocument();
+  });
+
+  it("asks main to toggle the in-game overlay when the overlay button is clicked", async () => {
+    stubApi("C:/journal");
+    setStore(MINING_STATE, MINING_SESSION);
+    render(<CommandDeck nowMs={NOW} />);
+    const btn = await screen.findByTestId("overlay-toggle");
+    const toggle = (window.lodestar as unknown as { toggleOverlay: ReturnType<typeof vi.fn> })
+      .toggleOverlay;
+    fireEvent.click(btn);
+    expect(toggle).toHaveBeenCalledOnce();
   });
 
   it("guides the commander to Settings when no journal is configured", async () => {

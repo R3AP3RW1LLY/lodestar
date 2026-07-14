@@ -71,6 +71,9 @@ importers:
       '@lodestar/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
+      '@lodestar/overlay':
+        specifier: workspace:*
+        version: link:../../packages/overlay
       '@lodestar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -199,6 +202,31 @@ importers:
       '@lodestar/shared':
         specifier: workspace:*
         version: link:../shared
+
+  packages/overlay:
+    dependencies:
+      '@lodestar/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.2.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@testing-library/react':
+        specifier: ^16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@types/react':
+        specifier: ^19.2.2
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.2.1
+        version: 19.2.3(@types/react@19.2.17)
+      jsdom:
+        specifier: ^29.1.1
+        version: 29.1.1
 
   packages/scripts:
     dependencies:

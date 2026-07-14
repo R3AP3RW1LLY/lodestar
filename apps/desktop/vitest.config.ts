@@ -19,6 +19,7 @@ export default defineConfig({
         // (boot/secrets/persist specs), not reachable by a Node unit test.
         "src/main/index.ts",
         "src/renderer/main.tsx",
+        "src/renderer/overlay-main.tsx",
         "src/renderer/theme/tailwind-preset.ts",
       ],
       thresholds: {
