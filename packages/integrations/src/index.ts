@@ -50,3 +50,26 @@ export type { EdsmClient } from "./edsm/client.js";
 export { createEdsmClient, EDSM_MAX_RADIUS_LY } from "./edsm/client.js";
 export type { GalaxyRepos, BodyEnrichResult } from "./edsm/enrich.js";
 export { enrichSystemsFromEdsm, enrichBodiesFromEdsm } from "./edsm/enrich.js";
+export type {
+  EddnCommodityPrice,
+  EddnMarketMessage,
+  EddnParseResult,
+  PlausibilityBands,
+} from "./eddn/commodity-schema.js";
+export {
+  EDDN_COMMODITY_SCHEMA,
+  DEFAULT_PLAUSIBILITY,
+  isPlausiblePrice,
+  parseEddnCommodityMessage,
+} from "./eddn/commodity-schema.js";
+export type {
+  EddnEvent,
+  EddnSource,
+  EddnSink,
+  RateBound,
+  EddnListenerDeps,
+  EddnListener,
+} from "./eddn/listener.js";
+export { EDDN_ENDPOINT, decodeEddnFrame, createEddnListener } from "./eddn/listener.js";
+export type { EddnMarketSink } from "./eddn/market-sink.js";
+export { createEddnMarketSink } from "./eddn/market-sink.js";
