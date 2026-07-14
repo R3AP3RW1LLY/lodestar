@@ -3,6 +3,7 @@ import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ElectronApplication } from "@playwright/test";
+import { mainWindow } from "./helpers.js";
 
 const APP_ENTRY = join(import.meta.dirname, "..", "out", "main", "index.cjs");
 const JOURNAL = "Journal.2025-06-01T120000.01.log";
@@ -62,7 +63,7 @@ test("live journal telemetry drives the Command Deck panels", async () => {
   writeFileSync(join(journalDir, JOURNAL), INITIAL);
 
   const app = await launch();
-  const win = await app.firstWindow();
+  const win = await mainWindow(app);
 
   // Snapshot → UI: the active mining session and its context render.
   await expect(win.getByTestId("session-status")).toHaveText("active", { timeout: 15000 });

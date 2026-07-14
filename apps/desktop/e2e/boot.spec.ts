@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import electronPath from "electron";
 import type { ElectronApplication } from "@playwright/test";
+import { mainWindow } from "./helpers.js";
 
 const APP_DIR = join(import.meta.dirname, "..");
 const APP_ENTRY = join(APP_DIR, "out", "main", "index.cjs");
@@ -25,7 +26,7 @@ test("boots to the Command Deck shell and renders the IPC health payload", async
     env: { ...process.env, LODESTAR_DATA_DIR: dataDir },
   });
   try {
-    const window = await app.firstWindow();
+    const window = await mainWindow(app);
     await expect(window.getByRole("heading", { name: /command deck/i })).toBeVisible();
     // The status bar reflects real probes: the profile DB is opened and migrated
     // at boot → status ok (Step 0.6); no journal configured yet.
@@ -51,11 +52,11 @@ test("a second instance quits on its own and opens no second window (single-inst
     env: { ...process.env, LODESTAR_DATA_DIR: dataDir },
   });
   try {
-    await first.firstWindow();
-    // The app opens its own windows (the Command Deck + the hidden Step-2.10
-    // overlay); capture that baseline so we assert the BLOCKED second instance
-    // adds NONE of its own — without hard-coding how many windows we open.
-    const baselineWindowCount = first.windows().length;
+    await mainWindow(first);
+    // The app opens two windows — the Command Deck and the hidden Step-2.10
+    // overlay — and the overlay loads asynchronously, so wait for BOTH to settle
+    // before we prove the BLOCKED second instance adds none of its own.
+    await expect.poll(() => first.windows().length).toBe(2);
     // Launch the second instance as a raw process (Playwright's launcher would
     // reject an app that deliberately never shows a window). It shares the same
     // data dir, so it fails to acquire the lock and must quit on its own.
@@ -78,7 +79,9 @@ test("a second instance quits on its own and opens no second window (single-inst
     // It must quit cleanly AND for the right reason (lock denial, not a crash).
     expect(exitCode).toBe(0);
     expect(stdout).toContain("LODESTAR_SECOND_INSTANCE_QUIT");
-    expect(first.windows().length).toBe(baselineWindowCount);
+    // The blocked instance added no window — the first instance still has exactly
+    // its own two (Command Deck + overlay).
+    expect(first.windows().length).toBe(2);
   } finally {
     await first.close();
   }

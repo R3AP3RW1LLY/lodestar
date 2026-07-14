@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync, appendFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ElectronApplication, Page } from "@playwright/test";
+import { mainWindow } from "./helpers.js";
 
 const APP_ENTRY = join(import.meta.dirname, "..", "out", "main", "index.cjs");
 const JOURNAL = "Journal.2025-06-01T120000.01.log";
@@ -80,14 +81,14 @@ test("an app restart mid-session resumes totals without re-folding the journal",
   writeFileSync(join(journalDir, JOURNAL), ACTIVE_SESSION);
 
   const first = await launch();
-  const w1 = await first.firstWindow();
+  const w1 = await mainWindow(first);
   await subscribe(w1);
   await waitForTons(w1, 2); // folded the active session; cursor persisted
   await first.close();
 
   // Relaunch on the SAME data dir (cursor + DB) and journal dir.
   const second = await launch();
-  const w2 = await second.firstWindow();
+  const w2 = await mainWindow(second);
   await subscribe(w2);
   await waitForTons(w2, 2); // resumed from the DB — NOT re-folded (would be 4)
 

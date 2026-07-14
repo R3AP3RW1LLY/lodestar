@@ -2,6 +2,7 @@ import { test, expect, _electron as electron } from "@playwright/test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { mainWindow } from "./helpers.js";
 
 const APP_ENTRY = join(import.meta.dirname, "..", "out", "main", "index.cjs");
 
@@ -18,7 +19,7 @@ test("real safeStorage encrypts and round-trips a secret without plaintext", asy
     env: { ...process.env, LODESTAR_DATA_DIR: dataDir },
   });
   try {
-    await app.firstWindow();
+    await mainWindow(app);
     const result = await app.evaluate(({ safeStorage }) => {
       const secret = "sk-LIVE-e2e-should-not-appear-plaintext";
       const available = safeStorage.isEncryptionAvailable();

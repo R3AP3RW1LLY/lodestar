@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ElectronApplication } from "@playwright/test";
+import { mainWindow } from "./helpers.js";
 
 const APP_ENTRY = join(import.meta.dirname, "..", "out", "main", "index.cjs");
 
@@ -50,7 +51,7 @@ interface Api {
  */
 test("settings and encrypted secrets persist across an app restart", async () => {
   const first = await launch();
-  const firstWindow = await first.firstWindow();
+  const firstWindow = await mainWindow(first);
   const wrote = await firstWindow.evaluate(
     async (input: { endpoint: string; key: string }) => {
       const api = (window as unknown as { lodestar: Api }).lodestar;
@@ -66,7 +67,7 @@ test("settings and encrypted secrets persist across an app restart", async () =>
 
   // Relaunch on the SAME data dir — nothing should be re-entered.
   const second = await launch();
-  const secondWindow = await second.firstWindow();
+  const secondWindow = await mainWindow(second);
   const read = await secondWindow.evaluate(async () => {
     const api = (window as unknown as { lodestar: Api }).lodestar;
     const settings = await api.getSettings();
