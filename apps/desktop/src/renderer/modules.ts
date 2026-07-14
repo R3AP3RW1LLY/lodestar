@@ -32,7 +32,7 @@ export const MODULES: readonly ModuleDef[] = [
   { id: "manifest", label: "Manifest", phase: 3, available: true },
   { id: "vein-finder", label: "Vein Finder", phase: 4, available: false },
   { id: "ledger", label: "Ledger", phase: 4, available: true },
-  { id: "cartographer", label: "Cartographer", phase: 4, available: false },
+  { id: "cartographer", label: "Cartographer", phase: 4, available: true },
   { id: "assistant", label: "Assistant", phase: 5, available: false },
   { id: "ops", label: "Ops", phase: 7, available: false },
   { id: "carrier", label: "Carrier", phase: 8, available: false },

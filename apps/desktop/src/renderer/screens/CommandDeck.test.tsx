@@ -27,6 +27,8 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     addAlert: vi.fn().mockResolvedValue([]),
     setAlertEnabled: vi.fn().mockResolvedValue([]),
     deleteAlert: vi.fn().mockResolvedValue([]),
+    planRuns: vi.fn().mockResolvedValue([]),
+    savePlan: vi.fn().mockResolvedValue({ runId: null }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }

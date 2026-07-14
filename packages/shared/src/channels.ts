@@ -20,6 +20,7 @@ import type {
   LedgerTrendPoint,
   LedgerAlertRule,
 } from "./ledger.js";
+import type { RunPlanView, SavePlanResult } from "./planner.js";
 
 export interface AppHealth {
   readonly version: string;
@@ -160,6 +161,10 @@ export interface ChannelPayloads {
   readonly "alerts.add": readonly LedgerAlertRule[];
   readonly "alerts.setEnabled": readonly LedgerAlertRule[];
   readonly "alerts.delete": readonly LedgerAlertRule[];
+  // Step 4.12c — Cartographer (invoke). `planner.plan` takes a PlanRunsRequest (strategy)
+  // and returns ranked run plans; `planner.save` persists the plan at an index to `runs`.
+  readonly "planner.plan": readonly RunPlanView[];
+  readonly "planner.save": SavePlanResult;
 }
 
 const CHANNEL_SET = {
@@ -190,6 +195,8 @@ const CHANNEL_SET = {
   "alerts.add": true,
   "alerts.setEnabled": true,
   "alerts.delete": true,
+  "planner.plan": true,
+  "planner.save": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

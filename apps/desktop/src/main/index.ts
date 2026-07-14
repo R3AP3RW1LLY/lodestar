@@ -46,6 +46,11 @@ import { createAnalyticsExporter } from "./analytics-export.js";
 import type { AnalyticsExporter } from "./analytics-export.js";
 import { buildManifest, buildSessionDetail, emptyManifest } from "./analytics-manifest.js";
 import { createLedgerBridge, emptyLedgerBridge } from "./ledger-wiring.js";
+import {
+  DEFAULT_CARTOGRAPHER_OPTIONS,
+  createCartographerBridge,
+  emptyCartographerBridge,
+} from "./cartographer-wiring.js";
 import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
@@ -344,6 +349,16 @@ async function bootstrap(): Promise<void> {
         )
       : emptyLedgerBridge();
 
+  // Cartographer (Step 4.12c): round-trip run planner over the galaxy DB (straight-line
+  // legs for now; a Spansh-backed RouteProvider can be injected here later).
+  const cartographer =
+    dbService.status() === "ok"
+      ? createCartographerBridge(dbService.db, {
+          ...DEFAULT_CARTOGRAPHER_OPTIONS,
+          now: () => Date.now(),
+        })
+      : emptyCartographerBridge();
+
   registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
@@ -380,6 +395,8 @@ async function bootstrap(): Promise<void> {
     addAlert: (request) => ledger.addAlert(request),
     setAlertEnabled: (id, enabled) => ledger.setAlertEnabled(id, enabled),
     deleteAlert: (id) => ledger.deleteAlert(id),
+    planRuns: (strategy) => cartographer.plan(strategy),
+    savePlan: (index) => ({ runId: cartographer.save(index, new Date().toISOString()) }),
   });
 
   engine.start();

@@ -21,6 +21,9 @@ import type {
   ManifestData,
   OverlayMode,
   OverlayToggleResult,
+  PlanStrategy,
+  RunPlanView,
+  SavePlanResult,
   RootState,
   SessionDetail,
   SessionFilter,
@@ -92,6 +95,10 @@ export interface IpcDeps {
   readonly addAlert: (request: AlertRuleRequest) => readonly LedgerAlertRule[];
   readonly setAlertEnabled: (id: number, enabled: boolean) => readonly LedgerAlertRule[];
   readonly deleteAlert: (id: number) => readonly LedgerAlertRule[];
+  /** Cartographer: build + rank round-trip plans for a strategy. */
+  readonly planRuns: (strategy: PlanStrategy) => Promise<readonly RunPlanView[]>;
+  /** Cartographer: persist the plan at an index to `runs`. */
+  readonly savePlan: (index: number) => SavePlanResult;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -246,5 +253,31 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
       return toWireResult(err(domainError("ipc.bad-args", "alerts.delete requires { id }")));
     }
     return toWireResult(ok(deps.deleteAlert(id)));
+  });
+
+  ipcMain.handle(
+    "planner.plan",
+    async (raw: unknown): Promise<WireResult<readonly RunPlanView[]>> => {
+      const strategy = (raw as { strategy?: unknown } | null)?.strategy;
+      if (strategy !== "max-profit" && strategy !== "min-time" && strategy !== "safest") {
+        return toWireResult(
+          err(
+            domainError(
+              "ipc.bad-args",
+              "planner.plan requires strategy ∈ max-profit|min-time|safest",
+            ),
+          ),
+        );
+      }
+      return toWireResult(ok(await deps.planRuns(strategy)));
+    },
+  );
+
+  ipcMain.handle("planner.save", (raw: unknown): WireResult<SavePlanResult> => {
+    const index = (raw as { index?: unknown } | null)?.index;
+    if (typeof index !== "number") {
+      return toWireResult(err(domainError("ipc.bad-args", "planner.save requires { index }")));
+    }
+    return toWireResult(ok(deps.savePlan(index)));
   });
 }

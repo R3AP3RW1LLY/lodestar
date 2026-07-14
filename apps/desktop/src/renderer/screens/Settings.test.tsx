@@ -52,6 +52,8 @@ function stubApi(over: Partial<LodestarApi> = {}): LodestarApi {
     addAlert: vi.fn().mockResolvedValue([]),
     setAlertEnabled: vi.fn().mockResolvedValue([]),
     deleteAlert: vi.fn().mockResolvedValue([]),
+    planRuns: vi.fn().mockResolvedValue([]),
+    savePlan: vi.fn().mockResolvedValue({ runId: null }),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;
