@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { Envelope, RootState, SessionSummary } from "@lodestar/shared";
 import { initialRootState, isEnvelope } from "@lodestar/shared";
+import type { ProspectStats } from "@lodestar/shared";
 import { createStateBridge } from "./state-bridge.js";
+
+const EMPTY_STATS: ProspectStats = {
+  prospected: 0,
+  mineVerdicts: 0,
+  hitRate: 0,
+  avgBestMaterialPct: 0,
+  motherlodeCount: 0,
+  byCommodity: {},
+};
 
 /** A hand-driven engine view: tests push state/session and observe the bridge. */
 function fakeEngine() {
@@ -203,6 +213,53 @@ describe("createStateBridge", () => {
     timer.fire();
     expect(sent).toHaveLength(1);
     expect(sent[0]?.payload).toEqual({ activity: "mining" });
+    bridge.stop();
+  });
+
+  it("enrichSession decorates each session.stats payload (2.8 prospect stats)", () => {
+    const eng = fakeEngine();
+    eng.setSession(mining(3));
+    const sent: Envelope[] = [];
+    const bridge = createStateBridge({
+      engine: eng.view,
+      send: (e) => sent.push(e),
+      enrichSession: (s) =>
+        s === null
+          ? null
+          : { ...s, prospectStats: { ...EMPTY_STATS, prospected: 4, hitRate: 0.5 } },
+    });
+    bridge.snapshot();
+    expect(sent[0]?.channel).toBe("session.stats");
+    expect(sent[0]?.payload).toMatchObject({
+      tonsRefined: 3,
+      prospectStats: { prospected: 4, hitRate: 0.5 },
+    });
+    bridge.stop();
+  });
+
+  it("touchSession() streams a fresh enriched session.stats without a session change", () => {
+    const eng = fakeEngine();
+    eng.setSession(mining(5));
+    const timer = manualTimer();
+    const sent: Envelope[] = [];
+    let prospected = 0;
+    const bridge = createStateBridge({
+      engine: eng.view,
+      send: (e) => sent.push(e),
+      setTimer: timer.setTimer,
+      clearTimer: timer.clearTimer,
+      enrichSession: (s) =>
+        s === null ? null : { ...s, prospectStats: { ...EMPTY_STATS, prospected } },
+    });
+    bridge.snapshot(); // baseline: prospected 0
+    sent.length = 0;
+
+    prospected = 7; // a prospect arrived — stats changed, but the engine emitted no session
+    bridge.touchSession();
+    timer.fire();
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.channel).toBe("session.stats");
+    expect(sent[0]?.payload).toMatchObject({ prospectStats: { prospected: 7 } });
     bridge.stop();
   });
 

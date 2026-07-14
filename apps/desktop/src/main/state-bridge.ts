@@ -35,6 +35,12 @@ export interface StateBridgeDeps {
   readonly envelopeNow?: () => Date;
   /** Notified if a push throws (e.g. a destroyed-window race) — never rethrown. */
   readonly onError?: (error: unknown) => void;
+  /**
+   * Enrich each `session.stats` payload just before it is sent (Step 2.8 adds the
+   * live prospector stats here). Applied to whatever session is being pushed; the
+   * default is identity.
+   */
+  readonly enrichSession?: (session: SessionSummary | null) => SessionSummary | null;
 }
 
 export interface StateBridge {
@@ -46,6 +52,12 @@ export interface StateBridge {
   snapshot: () => RootState;
   /** Force any pending delta/session out immediately (shutdown / tests). */
   flush: () => void;
+  /**
+   * Mark the session dirty so a fresh (enriched) `session.stats` is pushed — used
+   * by the Assay pipeline (2.8) to stream updated prospector stats on each verdict,
+   * even though a prospect isn't a state/session change the engine emits.
+   */
+  touchSession: () => void;
   stop: () => void;
 }
 
@@ -58,6 +70,7 @@ export function createStateBridge(deps: StateBridgeDeps): StateBridge {
       clearTimeout(h as ReturnType<typeof setTimeout>);
     });
   const stamp = deps.envelopeNow;
+  const enrich = deps.enrichSession ?? ((session: SessionSummary | null) => session);
 
   const wrap = <C extends "state.delta" | "session.stats">(
     channel: C,
@@ -85,7 +98,7 @@ export function createStateBridge(deps: StateBridgeDeps): StateBridge {
         lastSent = current;
       }
       if (sessionDirty) {
-        deps.send(wrap("session.stats", pendingSession));
+        deps.send(wrap("session.stats", enrich(pendingSession)));
         sessionDirty = false;
       }
     } catch (error) {
@@ -113,10 +126,15 @@ export function createStateBridge(deps: StateBridgeDeps): StateBridge {
       // it) and push the current session so a freshly-subscribed renderer has it.
       const current = deps.engine.state();
       lastSent = current;
-      deps.send(wrap("session.stats", deps.engine.session()));
+      deps.send(wrap("session.stats", enrich(deps.engine.session())));
       return current;
     },
     flush: doFlush,
+    touchSession: () => {
+      pendingSession = deps.engine.session();
+      sessionDirty = true;
+      schedule();
+    },
     stop: () => {
       if (timer !== undefined) {
         clearTimer(timer);

@@ -105,6 +105,11 @@ describe("createLiveEngine — golden fixture replay", () => {
     const history = repo.listEnded();
     expect(history).toHaveLength(1);
     expect(history[0]).toMatchObject({ tonsRefined: 5, creditsEarned: 2_500_000, active: false });
+
+    // Step 2.8: `lastSessionId()` resolves the persisted session's row (it drives the
+    // stats enrichment, and unlike `sessionId()` it survives the session ending).
+    const rowId = (db.prepare("SELECT id FROM sessions LIMIT 1").get() as { id: number }).id;
+    expect(engine.lastSessionId()).toBe(rowId);
   });
 });
 

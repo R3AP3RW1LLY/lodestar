@@ -17,6 +17,7 @@ import {
   createSecretsStore,
   createLiveEngine,
   createSessionRepository,
+  createProspectRepository,
 } from "@lodestar/core";
 import type { DbService } from "@lodestar/core";
 import { safeStorageBackend, fileSecretStorage } from "./secrets.js";
@@ -37,6 +38,7 @@ import { VOICE_CATALOG } from "@lodestar/voice";
 import { createTtsService } from "./tts-service.js";
 import { wireAssay } from "./assay-wiring.js";
 import type { AssayWiring } from "./assay-wiring.js";
+import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
 let logger: Logger | undefined;
@@ -178,6 +180,11 @@ async function bootstrap(): Promise<void> {
   mainWindow = createMainWindow();
   const window = mainWindow;
 
+  // Prospector statistics (Step 2.8): the session.stats push is enriched with live
+  // stats recomputed from the active session's persisted prospects.
+  const prospectRepo =
+    dbService.status() === "ok" ? createProspectRepository(dbService.db) : undefined;
+
   const stateBridge = createStateBridge({
     engine,
     send: (env) => {
@@ -187,6 +194,7 @@ async function bootstrap(): Promise<void> {
     onError: (error) => {
       log.warn("state-bridge.send-failed", { error: String(error) });
     },
+    enrichSession: (session) => enrichSessionStats(session, engine.lastSessionId(), prospectRepo),
   });
 
   // TTS (Step 2.7b): synthesize verdict callouts + push them to the renderer for
@@ -208,7 +216,10 @@ async function bootstrap(): Promise<void> {
     assayWiring = wireAssay({
       engine,
       db: dbService.db,
-      onVerdict: ttsService.onVerdict,
+      onVerdict: (verdict) => {
+        ttsService.onVerdict(verdict);
+        stateBridge.touchSession(); // stream the updated prospector stats
+      },
       logger: log,
     });
   }

@@ -57,6 +57,8 @@ export type { Prospect, ProspectMaterial } from "./journal/events/prospected-ast
 export { toProspect } from "./journal/events/prospected-asteroid.js";
 export type { ProspectRepository, StoredProspect } from "./session/prospect-repository.js";
 export { createProspectRepository } from "./session/prospect-repository.js";
+export type { ProspectStatEntry } from "./session/prospect-stats.js";
+export { computeProspectStats, emptyProspectStats } from "./session/prospect-stats.js";
 export type { PriceBookStore, BestPrice, PriceSource, PriceResolver } from "./market/price-book.js";
 export { createPriceBookStore } from "./market/price-book.js";
 export type { BusLogger, Listener, Subscription, EventBusOptions } from "./bus/event-bus.js";

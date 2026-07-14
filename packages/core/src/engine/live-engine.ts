@@ -78,8 +78,14 @@ export interface LiveEngine {
   tick(): void;
   state(): RootState;
   session(): SessionSummary | null;
-  /** The active session's row id, or undefined when none is open (for assay wiring). */
+  /** The ACTIVE session's row id, or undefined when none is open (tagging new prospects). */
   sessionId(): number | undefined;
+  /**
+   * The row id of the session `session()` reflects — the active one, or the LAST
+   * one even after it ends (for stats display; unlike `sessionId()` this does not
+   * go undefined when a session ends).
+   */
+  lastSessionId(): number | undefined;
   onState(fn: (state: RootState) => void): Unsubscribe;
   onSession(fn: (session: SessionSummary | null) => void): Unsubscribe;
   /** Each parsed journal event, for consumers beyond state/session (e.g. Assay, 2.6). */
@@ -96,6 +102,9 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
   let rootState: RootState = initialRootState();
   let tracker: TrackerState = initialTracker();
   let activeId: number | undefined;
+  // The row id of the last session persisted — tracks `lastSession`, so it survives
+  // a session ending (when `activeId` is cleared). Drives stats display (2.8).
+  let lastPersistedId: number | undefined;
   let lastSession: Session | undefined;
   let sessionSummary: SessionSummary | null = null;
 
@@ -138,11 +147,12 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     // A session that just ended IS the one we were persisting under activeId —
     // update its row to 'ended', then clear the id so the next active inserts.
     for (const ended of next.justEnded) {
-      repo.save(ended, activeId);
+      lastPersistedId = repo.save(ended, activeId);
       activeId = undefined;
     }
     if (next.active !== undefined) {
       activeId = repo.save(next.active, activeId);
+      lastPersistedId = activeId;
     }
   }
 
@@ -185,6 +195,7 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
   if (resumed !== undefined) {
     tracker = resumeTracker(resumed.session);
     activeId = resumed.id;
+    lastPersistedId = resumed.id;
     lastSession = resumed.session;
     sessionSummary = summarize(resumed.session, opts.now?.());
   }
@@ -228,6 +239,7 @@ export function createLiveEngine(opts: LiveEngineOptions): LiveEngine {
     state: () => rootState,
     session: () => sessionSummary,
     sessionId: () => activeId,
+    lastSessionId: () => lastPersistedId,
     onState: (fn) => {
       stateListeners.add(fn);
       return () => stateListeners.delete(fn);

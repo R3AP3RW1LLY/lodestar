@@ -5,6 +5,26 @@
  * mining signal.
  */
 
+/**
+ * Prospector statistics (SSOT Step 2.8) — rolled up from the session's prospect
+ * observations + their Assay verdicts. Derived (recomputable from the persisted
+ * prospects), streamed live on `session.stats`.
+ */
+export interface ProspectStats {
+  /** Total prospects observed this session. */
+  readonly prospected: number;
+  /** How many earned a MINE verdict. */
+  readonly mineVerdicts: number;
+  /** mineVerdicts / prospected (0 when none prospected). */
+  readonly hitRate: number;
+  /** Mean best (highest-proportion) material %, over prospects that had materials. */
+  readonly avgBestMaterialPct: number;
+  /** Prospects that carried a motherlode. */
+  readonly motherlodeCount: number;
+  /** Count of prospects keyed by the canonical id of their dominant material. */
+  readonly byCommodity: Readonly<Record<string, number>>;
+}
+
 export interface SessionSummary {
   readonly active: boolean;
   readonly startedAt: string;
@@ -25,4 +45,6 @@ export interface SessionSummary {
    * commanders' carriers; true own-carrier matching by ID lands in Phase 8.
    */
   readonly bankedToCarrier: number;
+  /** Prospector statistics (Step 2.8); absent until the enrichment path adds it. */
+  readonly prospectStats?: ProspectStats;
 }
