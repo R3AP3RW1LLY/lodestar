@@ -104,6 +104,11 @@ export type {
   ExportKind,
   RefinementExportRow,
   ProspectExportRow,
+  SessionEfficiency,
+  SessionLimpetEfficiency,
+  LimpetTotals,
+  SessionTimeSplit,
+  TimeSplitTotals,
 } from "./analytics/index.js";
 export {
   createAnalyticsRepository,
