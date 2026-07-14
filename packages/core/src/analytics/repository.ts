@@ -28,6 +28,8 @@ import {
   toSessionListItem,
   toTrendPoint,
 } from "./aggregates.js";
+import { assembleBreakdowns } from "./breakdowns.js";
+import type { Breakdowns, SessionBreakdownInput } from "./breakdowns.js";
 
 const PROSPECTED_SUB = "(SELECT COUNT(*) FROM prospects p WHERE p.session_id = s.id)";
 const MINE_SUB =
@@ -47,6 +49,10 @@ export function listSessionsSql(where: string): string {
 /** Per-session refined tons grouped by commodity (seeks `refinements` via its index). */
 export const REFINEMENTS_BY_COMMODITY_SQL =
   "SELECT commodity, SUM(tons) AS tons FROM refinements WHERE session_id = @id GROUP BY commodity ORDER BY tons DESC, commodity";
+
+/** A session's dominant (highest-tonnage) commodity (seeks `refinements` via its index). */
+export const DOMINANT_COMMODITY_SQL =
+  "SELECT commodity FROM refinements WHERE session_id = @id GROUP BY commodity ORDER BY SUM(tons) DESC, commodity LIMIT 1";
 
 /** Per-session prospect summary (seeks `prospects` via its index). */
 export const PROSPECT_SUMMARY_SQL = `SELECT COUNT(*) AS prospected,
@@ -75,6 +81,8 @@ export interface AnalyticsRepository {
   aggregate: (filter?: SessionFilter) => SessionAggregates;
   /** Chronological (oldest→newest) productivity trend of the filtered sessions. */
   trend: (filter?: SessionFilter) => TrendPoint[];
+  /** Per-commodity / ring / ship breakdowns + best (ring × commodity) pairings. */
+  breakdowns: (filter?: SessionFilter) => Breakdowns;
 }
 
 export function createAnalyticsRepository(db: Db): AnalyticsRepository {
@@ -93,11 +101,27 @@ export function createAnalyticsRepository(db: Db): AnalyticsRepository {
     return row === undefined ? undefined : toSessionListItem(row);
   };
 
+  const dominantStmt = db.prepare(DOMINANT_COMMODITY_SQL);
+
   return {
     listSessions: (filter = {}) => list(filter),
     aggregate: (filter = {}) => computeAggregates(list(filter)),
     // list() returns a fresh array, so reversing it in place is safe.
     trend: (filter = {}) => list(filter).reverse().map(toTrendPoint),
+    breakdowns: (filter = {}) => {
+      const inputs = list(filter).map((s): SessionBreakdownInput => {
+        const dom = dominantStmt.get({ id: s.id }) as { commodity: string } | undefined;
+        return {
+          ring: s.ring,
+          ship: s.ship,
+          commodity: dom?.commodity ?? null,
+          tonsRefined: s.tonsRefined,
+          creditsEarned: s.creditsEarned,
+          durationSec: s.durationSec,
+        };
+      });
+      return assembleBreakdowns(inputs);
+    },
     sessionDetail: (id) => {
       const session = detailRow(id);
       if (session === undefined) return undefined;

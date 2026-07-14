@@ -22,4 +22,7 @@ export {
   listSessionsSql,
   REFINEMENTS_BY_COMMODITY_SQL,
   PROSPECT_SUMMARY_SQL,
+  DOMINANT_COMMODITY_SQL,
 } from "./repository.js";
+export type { SessionBreakdownInput, BreakdownRow, PairingRow, Breakdowns } from "./breakdowns.js";
+export { foldBreakdown, foldPairings, assembleBreakdowns } from "./breakdowns.js";
