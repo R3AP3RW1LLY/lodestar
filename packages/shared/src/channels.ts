@@ -14,6 +14,12 @@ import type { StateDelta } from "./state-delta.js";
 import type { SessionSummary } from "./session.js";
 import type { AssayVerdictEvent } from "./assay.js";
 import type { ManifestData, SessionDetail } from "./analytics.js";
+import type {
+  LedgerBoardEntry,
+  LedgerStation,
+  LedgerTrendPoint,
+  LedgerAlertRule,
+} from "./ledger.js";
 
 export interface AppHealth {
   readonly version: string;
@@ -143,6 +149,17 @@ export interface ChannelPayloads {
   // arg and returns the full bundle; `analytics.sessionDetail` takes a session id.
   readonly "analytics.manifest": ManifestData;
   readonly "analytics.sessionDetail": SessionDetail | null;
+  // Step 4.11c — Ledger (invoke). `ledger.board` (no arg) returns the best station per
+  // commodity; `ledger.stations` takes a LedgerStationQuery; `ledger.trend` a
+  // LedgerTrendQuery. Alert rules: `alerts.list`/`add`/`setEnabled`/`delete` each return
+  // the full updated rule list.
+  readonly "ledger.board": readonly LedgerBoardEntry[];
+  readonly "ledger.stations": readonly LedgerStation[];
+  readonly "ledger.trend": readonly LedgerTrendPoint[];
+  readonly "alerts.list": readonly LedgerAlertRule[];
+  readonly "alerts.add": readonly LedgerAlertRule[];
+  readonly "alerts.setEnabled": readonly LedgerAlertRule[];
+  readonly "alerts.delete": readonly LedgerAlertRule[];
 }
 
 const CHANNEL_SET = {
@@ -166,6 +183,13 @@ const CHANNEL_SET = {
   "analytics.export": true,
   "analytics.manifest": true,
   "analytics.sessionDetail": true,
+  "ledger.board": true,
+  "ledger.stations": true,
+  "ledger.trend": true,
+  "alerts.list": true,
+  "alerts.add": true,
+  "alerts.setEnabled": true,
+  "alerts.delete": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

@@ -157,6 +157,13 @@ function stubApi(
   const api = {
     getManifest: vi.fn(getManifest),
     getSessionDetail: vi.fn().mockResolvedValue(detail),
+    getLedgerBoard: vi.fn().mockResolvedValue([]),
+    getLedgerStations: vi.fn().mockResolvedValue([]),
+    getLedgerTrend: vi.fn().mockResolvedValue([]),
+    listAlerts: vi.fn().mockResolvedValue([]),
+    addAlert: vi.fn().mockResolvedValue([]),
+    setAlertEnabled: vi.fn().mockResolvedValue([]),
+    deleteAlert: vi.fn().mockResolvedValue([]),
     exportAnalytics: vi.fn().mockResolvedValue({ ok: true, path: "D:/x.csv" }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;

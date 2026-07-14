@@ -45,6 +45,7 @@ import type { AssayWiring } from "./assay-wiring.js";
 import { createAnalyticsExporter } from "./analytics-export.js";
 import type { AnalyticsExporter } from "./analytics-export.js";
 import { buildManifest, buildSessionDetail, emptyManifest } from "./analytics-manifest.js";
+import { createLedgerBridge, emptyLedgerBridge } from "./ledger-wiring.js";
 import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
@@ -329,6 +330,20 @@ async function bootstrap(): Promise<void> {
         })
       : undefined;
 
+  // Ledger + alert framework (Step 4.11c): best-sell ranking / trend / board + alert-rule
+  // CRUD. Live alert delivery (notification + TTS) is wired later; for now a fire logs.
+  const ledger =
+    dbService.status() === "ok"
+      ? createLedgerBridge(
+          dbService.db,
+          () => Date.now(),
+          () => new Date().toISOString(),
+          (alert) => {
+            log.info("alert.fired", { ruleId: alert.ruleId, kind: alert.kind });
+          },
+        )
+      : emptyLedgerBridge();
+
   registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
@@ -358,6 +373,13 @@ async function bootstrap(): Promise<void> {
       dbService?.status() === "ok" ? buildManifest(dbService.db, filter) : emptyManifest(),
     getSessionDetail: (sessionId) =>
       dbService?.status() === "ok" ? buildSessionDetail(dbService.db, sessionId) : null,
+    ledgerBoard: () => ledger.board(),
+    ledgerStations: (query) => ledger.stations(query),
+    ledgerTrend: (query) => ledger.trend(query),
+    listAlerts: () => ledger.listAlerts(),
+    addAlert: (request) => ledger.addAlert(request),
+    setAlertEnabled: (id, enabled) => ledger.setAlertEnabled(id, enabled),
+    deleteAlert: (id) => ledger.deleteAlert(id),
   });
 
   engine.start();

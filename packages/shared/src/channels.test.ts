@@ -5,12 +5,19 @@ import type { AppHealth, Envelope } from "./channels.js";
 describe("IPC channels", () => {
   it("the channel union is closed and contains exactly the registered channels", () => {
     expect([...CHANNELS].sort()).toEqual([
+      "alerts.add",
+      "alerts.delete",
+      "alerts.list",
+      "alerts.setEnabled",
       "analytics.export",
       "analytics.manifest",
       "analytics.sessionDetail",
       "app.health",
       "assay.verdict",
       "journal.autodetect",
+      "ledger.board",
+      "ledger.stations",
+      "ledger.trend",
       "overlay.lock",
       "overlay.mode",
       "overlay.toggle",
