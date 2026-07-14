@@ -5,10 +5,66 @@ import { MfdButton } from "../components/MfdButton.js";
 
 type SecretKey = keyof SecretsPresence;
 
-const SECRET_FIELDS: readonly { key: SecretKey; label: string }[] = [
-  { key: "inaraApiKey", label: "Inara API Key" },
-  { key: "capiTokens", label: "Frontier cAPI Tokens" },
-  { key: "discordWebhookUrl", label: "Discord Webhook URL" },
+const SECRET_FIELDS: readonly {
+  key: SecretKey;
+  label: string;
+  description: string;
+}[] = [
+  {
+    key: "inaraApiKey",
+    label: "Inara API Key",
+    description:
+      "Optional. Extra market & reference data from inara.cz. Get one under your Inara profile → API keys.",
+  },
+  {
+    key: "capiTokens",
+    label: "Frontier cAPI Tokens",
+    description:
+      "Not required. Frontier's account API needs developer approval + an OAuth login — Polaris runs fully without it (journal + EDDN cover mining). Mainly useful later for fleet carriers.",
+  },
+  {
+    key: "discordWebhookUrl",
+    label: "Discord Webhook URL",
+    description: "Optional. Session debriefs to Discord — off by default, wired in Phase 10.",
+  },
+];
+
+/**
+ * The data sources that feed the intelligence engine. Keyless-first: only Inara uses a
+ * key and Frontier cAPI is optional. Status is honest — `live` sources are streaming now;
+ * the galaxy sources are built and keyless but their live wiring is still in progress.
+ */
+const DATA_SOURCES: readonly {
+  name: string;
+  status: string;
+  live: boolean;
+  detail: string;
+}[] = [
+  {
+    name: "Journal",
+    status: "Live",
+    live: true,
+    detail:
+      "Your real-time game feed — commander, ship, cargo, prospected rocks, scans, and your docked station's market. No key.",
+  },
+  {
+    name: "EDDN",
+    status: "Keyless · wiring in progress",
+    live: false,
+    detail: "Galaxy-wide live market prices shared by the community. No key.",
+  },
+  {
+    name: "EDSM",
+    status: "Keyless · wiring in progress",
+    live: false,
+    detail: "System & body reference (coordinates, ring types). No key needed for reads.",
+  },
+  {
+    name: "Spansh",
+    status: "Keyless · wiring in progress",
+    live: false,
+    detail: "Multi-jump route plotting for the Cartographer. No key.",
+  },
 ];
 
 const CONSENT_FIELDS: readonly { key: keyof SettingsSnapshot; label: string }[] = [
@@ -279,12 +335,41 @@ export function Settings(): React.JSX.Element {
         </div>
       </MfdPanel>
 
-      <MfdPanel title="Secrets">
+      <MfdPanel title="Data sources">
+        <p className="mb-2 text-xs text-cyan-dim">
+          Polaris is keyless-first. Your journal is the live game feed; the galaxy sources below
+          need no key. Only Inara uses a key, and Frontier cAPI is optional (both under API keys).
+        </p>
+        <ul className="flex flex-col gap-2">
+          {DATA_SOURCES.map((s) => (
+            <li key={s.name} className="flex flex-col">
+              <span className="flex items-center gap-2">
+                <span className="text-orange">{s.name}</span>
+                <span
+                  className={`text-[10px] uppercase tracking-widest ${
+                    s.live ? "text-signal-ok" : "text-signal-skip"
+                  }`}
+                >
+                  {s.status}
+                </span>
+              </span>
+              <span className="text-xs text-cyan-dim">{s.detail}</span>
+            </li>
+          ))}
+        </ul>
+      </MfdPanel>
+
+      <MfdPanel title="API keys">
+        <p className="mb-2 text-xs text-cyan-dim">
+          All optional — Polaris mines fine with none of these. Keys are masked, stored via
+          safeStorage, and never read back.
+        </p>
         {SECRET_FIELDS.map((field) => (
           <SecretField
             key={field.key}
             fieldKey={field.key}
             label={field.label}
+            description={field.description}
             isSet={presence?.[field.key] ?? false}
             onSaved={setPresence}
             onError={setError}
@@ -317,6 +402,7 @@ export function Settings(): React.JSX.Element {
 interface SecretFieldProps {
   readonly fieldKey: SecretKey;
   readonly label: string;
+  readonly description: string;
   readonly isSet: boolean;
   readonly onSaved: (presence: SecretsPresence) => void;
   readonly onError: (message: string) => void;
@@ -325,13 +411,14 @@ interface SecretFieldProps {
 function SecretField({
   fieldKey,
   label,
+  description,
   isSet,
   onSaved,
   onError,
 }: SecretFieldProps): React.JSX.Element {
   const [value, setValue] = useState("");
   return (
-    <div className="mb-2">
+    <div className="mb-3">
       <label className="flex flex-col gap-1">
         <span className="text-cyan">{label}</span>
         <input
@@ -343,6 +430,7 @@ function SecretField({
           }}
         />
       </label>
+      <p className="mt-1 text-xs text-cyan-dim">{description}</p>
       <div className="mt-1 flex items-center gap-2">
         <MfdButton
           onClick={() => {
