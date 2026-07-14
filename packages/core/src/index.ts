@@ -82,3 +82,13 @@ export type {
   SpawnSidecar,
 } from "./sidecar/supervisor.js";
 export { createSupervisor } from "./sidecar/supervisor.js";
+export type {
+  SessionFilter,
+  SessionListItem,
+  SessionAggregates,
+  SessionDetail,
+  CommodityTons,
+  TrendPoint,
+  AnalyticsRepository,
+} from "./analytics/index.js";
+export { createAnalyticsRepository } from "./analytics/index.js";
