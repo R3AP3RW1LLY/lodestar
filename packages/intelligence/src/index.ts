@@ -14,3 +14,15 @@ export type {
   PriceBook,
 } from "./assay/verdict.js";
 export { assay, contentTier } from "./assay/verdict.js";
+export type {
+  OverlapConfidence,
+  HotspotObservation,
+  RingOverlap,
+  OverlapWeights,
+} from "./hotspots/overlaps.js";
+export {
+  DEFAULT_OVERLAP_WEIGHTS,
+  detectOverlapCandidate,
+  confirmOverlap,
+  overlapMultiplier,
+} from "./hotspots/overlaps.js";
