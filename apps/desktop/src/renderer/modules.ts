@@ -29,7 +29,7 @@ export interface ModuleDef {
 export const MODULES: readonly ModuleDef[] = [
   { id: "command-deck", label: "Command Deck", phase: 1, available: true },
   { id: "assay", label: "Assay", phase: 2, available: true },
-  { id: "manifest", label: "Manifest", phase: 3, available: false },
+  { id: "manifest", label: "Manifest", phase: 3, available: true },
   { id: "vein-finder", label: "Vein Finder", phase: 4, available: false },
   { id: "ledger", label: "Ledger", phase: 4, available: false },
   { id: "cartographer", label: "Cartographer", phase: 4, available: false },

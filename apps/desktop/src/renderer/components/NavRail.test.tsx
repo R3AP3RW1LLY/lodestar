@@ -13,9 +13,10 @@ describe("NavRail", () => {
     expect(screen.getByRole("button", { name: /command deck/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /settings/i })).toBeEnabled();
     expect(screen.getByRole("button", { name: /assay/i })).toBeEnabled(); // built in Phase 2
+    expect(screen.getByRole("button", { name: /manifest/i })).toBeEnabled(); // built in Phase 3
     // An unbuilt module is present but shows its arrival phase and is not a dead link.
-    const manifest = screen.getByRole("button", { name: /manifest/i });
-    expect(manifest).toHaveTextContent(/phase 3/i);
+    const veinFinder = screen.getByRole("button", { name: /vein finder/i });
+    expect(veinFinder).toHaveTextContent(/phase 4/i);
   });
 
   it("selects an available module on click", async () => {
