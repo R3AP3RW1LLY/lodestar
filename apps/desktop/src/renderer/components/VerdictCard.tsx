@@ -4,9 +4,11 @@ import { ReasonList } from "./ReasonList.js";
 import { contentTierLabel, topMaterial } from "../assay-format.js";
 
 /**
- * The headline verdict card (Step 2.9): a big MINE (orange, glowing) / SKIP (dim)
- * call, the dominant commodity, the structured reasons, and rock-composition bars.
- * Re-animates on each new prospect (keyed on prospectId).
+ * The headline verdict card (Step 2.9). A big MINE (orange, glowing) / SKIP (dim)
+ * call, the dominant commodity, structured reasons, and rock-composition bars. The
+ * card itself PERSISTS across prospects (content updates in place) — only the call
+ * badge does a subtle scale "pop" on arrival (keyed on prospectId), so a fast
+ * prospect stream never flickers the whole panel.
  */
 export function VerdictCard({
   verdict,
@@ -16,21 +18,21 @@ export function VerdictCard({
   const mine = verdict.call === "MINE";
   const top = topMaterial(verdict.materials);
   return (
-    <motion.div
-      key={verdict.prospectId}
-      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.25, ease: "easeOut" }}
+    <div
       className={`glass rounded-2xl border p-5 ${mine ? "border-orange/60 shadow-glow" : "border-white/10"}`}
       data-testid="verdict-card"
     >
       <div className="flex items-baseline justify-between gap-3">
-        <span
-          className={`font-display text-4xl uppercase tracking-[0.2em] ${mine ? "text-orange" : "text-cyan-dim"}`}
+        <motion.span
+          key={verdict.prospectId}
+          initial={{ scale: 1.16 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className={`inline-block origin-left font-display text-4xl uppercase tracking-[0.2em] ${mine ? "text-orange" : "text-cyan-dim"}`}
           data-testid="verdict-call"
         >
           {verdict.call}
-        </span>
+        </motion.span>
         {top !== undefined && (
           <span className="text-right text-lg text-orange">
             {top.displayName}{" "}
@@ -61,6 +63,6 @@ export function VerdictCard({
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
