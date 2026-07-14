@@ -26,6 +26,7 @@ function fakeEngine(): {
     state: () => initialRootState(),
     session: () => null,
     sessionId: () => sid,
+    lastSessionId: () => sid,
     onState: () => noop,
     onSession: () => noop,
     onEvent: (fn) => {
