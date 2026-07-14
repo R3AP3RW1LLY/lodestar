@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "note": "LODESTAR clean-room starter seed. Hand-authored from community common knowledge — NOT copied from any mining tool's dataset. Coordinates are approximate public galactic reference (coordsApproximate: true) and are authoritatively refined by EDSM enrichment (Step 4.7) and by the commander's own scans (Step 4.3). Intentionally minimal: the database grows primarily from first-party SAASignalsFound scans and, later, opt-in community sync. See resources/seed/PROVENANCE.md.",
+  "systems": [
+    {
+      "name": "Hyades Sector DB-X d1-112",
+      "coordsApproximate": true,
+      "coords": { "x": 100.9, "y": -80.5, "z": -22.6 },
+      "bodies": [
+        {
+          "name": "Hyades Sector DB-X d1-112 A 1",
+          "bodyType": "Metal-rich body",
+          "rings": [
+            {
+              "name": "Hyades Sector DB-X d1-112 A 1 A Ring",
+              "ringType": "Metallic",
+              "reserve": "Pristine",
+              "provenance": "Community common knowledge — a long-published Painite laser-mining destination widely referenced on player forums, wikis, and streams since the Painite era. Ring/commodity identity hand-authored, not copied from any tool. Coordinates approximate, EDSM-refined (Step 4.7).",
+              "hotspots": [{ "commodityId": "painite", "count": 2 }, { "commodityId": "platinum" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Paesia",
+      "coordsApproximate": true,
+      "coords": { "x": -25.1, "y": 40.5, "z": -7.2 },
+      "bodies": [
+        {
+          "name": "Paesia 2",
+          "bodyType": "Metal-rich body",
+          "rings": [
+            {
+              "name": "Paesia 2 A Ring",
+              "ringType": "Metallic",
+              "reserve": "Pristine",
+              "provenance": "Community common knowledge — a widely documented Painite hotspot system referenced across community guides. Ring/commodity identity hand-authored, not copied from any tool. Coordinates approximate, EDSM-refined (Step 4.7).",
+              "hotspots": [{ "commodityId": "painite", "count": 1 }, { "commodityId": "platinum" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Borann",
+      "coordsApproximate": true,
+      "coords": { "x": -71.6, "y": -50.9, "z": -6.6 },
+      "bodies": [
+        {
+          "name": "Borann A 2",
+          "bodyType": "Icy body",
+          "rings": [
+            {
+              "name": "Borann A 2 A Ring",
+              "ringType": "Icy",
+              "reserve": "Pristine",
+              "provenance": "Community common knowledge — the iconic Low Temperature Diamonds site made famous during the community 'diamond rush'; among the most widely published mining locations in the game. Ring/commodity identity hand-authored, not copied from any tool. Coordinates approximate, EDSM-refined (Step 4.7).",
+              "hotspots": [{ "commodityId": "lowtemperaturediamond", "count": 1 }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Delkar",
+      "coordsApproximate": true,
+      "coords": { "x": 47.9, "y": -46.8, "z": -1.2 },
+      "bodies": [
+        {
+          "name": "Delkar 7",
+          "bodyType": "Metal-rich body",
+          "rings": [
+            {
+              "name": "Delkar 7 A Ring",
+              "ringType": "Metallic",
+              "reserve": "Pristine",
+              "provenance": "Community common knowledge — a commonly referenced Painite metallic-ring location. Ring/commodity identity hand-authored, not copied from any tool. Coordinates approximate, EDSM-refined (Step 4.7).",
+              "hotspots": [{ "commodityId": "painite", "count": 1 }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
