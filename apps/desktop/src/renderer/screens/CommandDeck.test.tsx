@@ -70,21 +70,28 @@ describe("CommandDeck", () => {
     render(<CommandDeck nowMs={NOW} />);
 
     expect((await screen.findByTestId("deck-status")).getAttribute("data-mode")).toBe("online");
+    // Vessel reference strip: identity present, fuel is NOT here (deduplicated).
     expect(screen.getByText("python")).toBeInTheDocument();
     expect(screen.getByText("LS-01")).toBeInTheDocument();
-    expect(screen.getByText("Paesia")).toBeInTheDocument();
-    expect(screen.getAllByText("Paesia 2 A Ring").length).toBeGreaterThanOrEqual(2); // body + ring
+    // Situation: system + place (the ring string already carries the system prefix,
+    // so it renders exactly once — no more triple-rendered location).
+    expect(screen.getByTestId("situation-system").textContent).toBe("Paesia");
+    expect(screen.getByText("Paesia 2 A Ring")).toBeInTheDocument();
+    expect(screen.getByTestId("situation-dock").textContent).toBe("In Flight");
     expect(screen.getByTestId("activity-value").textContent).toBe("Mining");
     expect(screen.getByText("painite")).toBeInTheDocument();
-    // Fuel + pips (sys 2 / eng 4 / wep 0)
+    // Cargo hold: fill gauge against ship capacity (5 / 256 t → 2%).
+    expect(screen.getByTestId("cargo-pct").textContent).toBe("2%");
+    expect(screen.getByTestId("cargo-fill")).toBeInTheDocument();
+    // Fuel + pips (sys 2 / eng 4 / wep 0) — the deck's single fuel readout.
     expect(screen.getByLabelText("SYS 2 of 4")).toBeInTheDocument();
     expect(screen.getByLabelText("ENG 4 of 4")).toBeInTheDocument();
     expect(screen.getByLabelText("WEP 0 of 4")).toBeInTheDocument();
-    expect(screen.getByText("29.89 t")).toBeInTheDocument(); // fuel main
+    expect(screen.getAllByText("29.89 t")).toHaveLength(1); // fuel main, shown exactly once
     expect(screen.getByTestId("session-status").textContent).toBe("active");
     expect(screen.getByText("22.2")).toBeInTheDocument(); // tons/hr
-    expect(screen.getByText("2,500,000 cr")).toBeInTheDocument();
-    expect(screen.getByText("11,111,111 cr")).toBeInTheDocument();
+    expect(screen.getByText("2,500,000 cr")).toBeInTheDocument(); // credits earned
+    expect(screen.getByText("11,111,111 cr")).toBeInTheDocument(); // credits/hr
   });
 
   it("shows GAME OFFLINE over the last-known snapshot when writes go stale", async () => {
@@ -114,6 +121,8 @@ describe("CommandDeck", () => {
     render(<CommandDeck nowMs={NOW} />);
     await screen.findByTestId("deck-status");
     expect(screen.getByText("hold empty")).toBeInTheDocument();
+    // Capacity unknown ⇒ no fill bar (never a misleading gauge).
+    expect(screen.queryByTestId("cargo-fill")).toBeNull();
     expect(screen.getByText("nominal")).toBeInTheDocument();
     expect(screen.getByText("no active mining session")).toBeInTheDocument();
   });

@@ -3,21 +3,23 @@ import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { DataAgeBadge } from "../components/DataAgeBadge.js";
 import { MfdPanel } from "../components/MfdPanel.js";
-import { ShipPanel } from "../components/ShipPanel.js";
-import { LocationPanel } from "../components/LocationPanel.js";
-import { FuelPips } from "../components/FuelPips.js";
+import { SituationPanel } from "../components/SituationPanel.js";
 import { CargoPanel } from "../components/CargoPanel.js";
-import { ActivityPanel } from "../components/ActivityPanel.js";
 import { SessionStatsPanel } from "../components/SessionStatsPanel.js";
+import { FuelPips } from "../components/FuelPips.js";
+import { VesselStrip } from "../components/VesselStrip.js";
 import { useGameState, subscribeGameState } from "../stores/game-state.js";
 import { useNow } from "../hooks/use-now.js";
 import { deriveDeckStatus } from "./deck-status.js";
 import type { DeckStatus } from "./deck-status.js";
 
 /**
- * The Command Deck comes alive (Step 1.10). Wires the renderer store to the live
- * telemetry bridge and renders ship / location / fuel+pips / cargo / activity /
- * session. Offline + not-configured are first-class: a valid journal with no
+ * The Command Deck (redesigned). A purposeful bento rather than a grid of equal
+ * tiles: the SITUATION (what + where) and CARGO fill lead as the hero row, the
+ * SESSION rates and FUEL/POWER sit beneath, and static ship identity trails as a
+ * slim VESSEL strip. One fuel readout, one clear hierarchy, glanceable at speed.
+ *
+ * Offline + not-configured stay first-class (Step 1.10): a valid journal with no
  * fresh writes shows GAME OFFLINE over the LAST-KNOWN snapshot (never stale data
  * dressed as live); no journal at all guides the commander to Settings.
  */
@@ -56,10 +58,8 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
 
   if (status.mode === "not-configured") {
     return (
-      <div className="flex flex-col gap-4 p-4" data-testid="deck-not-configured">
-        <h1 className="font-display text-lg uppercase tracking-[0.3em] text-orange">
-          Command Deck
-        </h1>
+      <div className="mx-auto flex max-w-6xl flex-col gap-5 p-5" data-testid="deck-not-configured">
+        <DeckHeader />
         <MfdPanel title="No journal configured">
           <p className="text-sm text-cyan">
             LODESTAR needs your Elite Dangerous journal folder to show live telemetry.
@@ -74,41 +74,57 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="font-display text-lg uppercase tracking-[0.3em] text-orange">
-          Command Deck
-        </h1>
-        <DeckStatusBadge status={status} now={now} />
-      </header>
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <PanelSlot index={0}>
-          <ShipPanel ship={state.ship} />
+    <div className="mx-auto flex max-w-6xl flex-col gap-5 p-5">
+      <DeckHeader trailing={<DeckStatusBadge status={status} now={now} />} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <PanelSlot index={0} className="lg:col-span-8">
+          <SituationPanel activity={state.activity} location={state.location} flags={state.flags} />
         </PanelSlot>
-        <PanelSlot index={1}>
-          <LocationPanel location={state.location} />
+        <PanelSlot index={1} className="lg:col-span-4">
+          <CargoPanel cargo={state.cargo} capacity={state.ship.cargoCapacity} />
         </PanelSlot>
-        <PanelSlot index={2}>
+        <PanelSlot index={2} className="lg:col-span-8">
+          <SessionStatsPanel session={session} />
+        </PanelSlot>
+        <PanelSlot index={3} className="lg:col-span-4">
           <FuelPips ship={state.ship} pips={state.pips} />
         </PanelSlot>
-        <PanelSlot index={3}>
-          <CargoPanel cargo={state.cargo} />
-        </PanelSlot>
-        <PanelSlot index={4}>
-          <ActivityPanel activity={state.activity} flags={state.flags} />
-        </PanelSlot>
-        <PanelSlot index={5}>
-          <SessionStatsPanel session={session} />
+        <PanelSlot index={4} className="lg:col-span-12">
+          <VesselStrip ship={state.ship} />
         </PanelSlot>
       </div>
     </div>
   );
 }
 
+/** The deck's title lockup — an eyebrow + wordmark with an optional trailing status. */
+function DeckHeader({ trailing }: { readonly trailing?: ReactNode }): React.JSX.Element {
+  return (
+    <header className="flex items-end justify-between gap-4 border-b border-white/10 pb-3">
+      <div>
+        <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-dim">Lodestar</p>
+        <h1 className="mt-0.5 font-display text-xl uppercase tracking-[0.28em] text-orange">
+          Command Deck
+        </h1>
+      </div>
+      {trailing}
+    </header>
+  );
+}
+
 /** A subtle staggered fade-in for each panel (Framer Motion micro-transition). */
-function PanelSlot({ index, children }: { index: number; children: ReactNode }): React.JSX.Element {
+function PanelSlot({
+  index,
+  className,
+  children,
+}: {
+  index: number;
+  className?: string;
+  children: ReactNode;
+}): React.JSX.Element {
   return (
     <motion.div
+      className={className}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.03 }}
@@ -140,7 +156,13 @@ function DeckStatusBadge({
     );
   }
   return (
-    <span data-testid="deck-status" data-mode="online">
+    <span
+      data-testid="deck-status"
+      data-mode="online"
+      className="flex items-center gap-2 font-display text-xs uppercase tracking-[0.2em] text-signal-ok"
+    >
+      <span className="h-2 w-2 rounded-full bg-signal-ok shadow-[0_0_10px_rgba(51,221,153,0.7)]" />
+      Live
       {/* status.timestamp is guaranteed defined + fresh by deriveDeckStatus */}
       <DataAgeBadge timestamp={status.timestamp} source="journal" now={now} />
     </span>
