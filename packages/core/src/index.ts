@@ -55,6 +55,25 @@ export type {
 export { createLiveEngine } from "./engine/index.js";
 export type { Prospect, ProspectMaterial } from "./journal/events/prospected-asteroid.js";
 export { toProspect } from "./journal/events/prospected-asteroid.js";
+export type { RingHotspots, SeenHotspot } from "./journal/events/saa-signals.js";
+export {
+  interpretSaaSignals,
+  commodityFromSaaSignal,
+  ringBodyName,
+} from "./journal/events/saa-signals.js";
+export type { RingScan, ScannedRing } from "./journal/events/scan.js";
+export {
+  interpretRingScan,
+  normalizeRingClass,
+  normalizeReserveLevel,
+} from "./journal/events/scan.js";
+export type {
+  HotspotRecorder,
+  RecorderLocation,
+  RecordResult,
+  SkipReason,
+} from "./hotspots/recorder.js";
+export { createHotspotRecorder } from "./hotspots/recorder.js";
 export type { ProspectRepository, StoredProspect } from "./session/prospect-repository.js";
 export { createProspectRepository } from "./session/prospect-repository.js";
 export type { ProspectStatEntry } from "./session/prospect-stats.js";
