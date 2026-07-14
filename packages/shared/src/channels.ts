@@ -63,6 +63,16 @@ export interface OverlayToggleResult {
   readonly visible: boolean;
 }
 
+/**
+ * The overlay's interaction mode (Step 2.10 arrange). `locked` (default) = the
+ * click-through, display-only HUD; unlocked = the movable + resizable "arrange"
+ * state (a drag bar + grabbable edges). Pushed to the overlay over WS so it renders
+ * the edit chrome, and returned from the `overlay.lock` toggle.
+ */
+export interface OverlayMode {
+  readonly locked: boolean;
+}
+
 /** Presence-only view of secrets — booleans, never the secret values. */
 export interface SecretsPresence {
   readonly inaraApiKey: boolean;
@@ -107,6 +117,11 @@ export interface ChannelPayloads {
   // Step 2.10 — Command Deck asks main to toggle the in-game overlay (invoke); the
   // reply carries the overlay's new visibility.
   readonly "overlay.toggle": OverlayToggleResult;
+  // Step 2.10 (arrange) — Command Deck toggles the overlay lock (invoke, returns the
+  // new mode); `overlay.mode` pushes that mode to the overlay over WS so it shows or
+  // hides its move/resize chrome.
+  readonly "overlay.lock": OverlayMode;
+  readonly "overlay.mode": OverlayMode;
 }
 
 const CHANNEL_SET = {
@@ -125,6 +140,8 @@ const CHANNEL_SET = {
   "tts.voices": true,
   "assay.verdict": true,
   "overlay.toggle": true,
+  "overlay.lock": true,
+  "overlay.mode": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

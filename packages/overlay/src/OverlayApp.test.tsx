@@ -74,6 +74,24 @@ describe("OverlayApp", () => {
     expect(screen.getByTestId("cargo-fill")).toBeTruthy();
   });
 
+  it("shows the arrange chrome (drag bar) only when unlocked via overlay.mode", () => {
+    const { factory, send } = capturingFactory();
+    render(<OverlayApp port={1} token="t" factory={factory} />);
+    // Locked by default → no drag bar, click-through.
+    expect(screen.queryByTestId("overlay-dragbar")).toBeNull();
+    expect(screen.getByTestId("overlay-app").getAttribute("data-arranging")).toBe("false");
+    act(() => {
+      send(envelope("overlay.mode", { locked: false }));
+    });
+    expect(screen.getByTestId("overlay-dragbar")).toBeTruthy();
+    expect(screen.getByTestId("overlay-app").getAttribute("data-arranging")).toBe("true");
+    // Re-lock → chrome gone.
+    act(() => {
+      send(envelope("overlay.mode", { locked: true }));
+    });
+    expect(screen.queryByTestId("overlay-dragbar")).toBeNull();
+  });
+
   it("updates cargo on a state.delta push", () => {
     const { factory, send } = capturingFactory();
     render(<OverlayApp port={1} token="t" factory={factory} />);

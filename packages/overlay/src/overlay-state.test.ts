@@ -40,6 +40,15 @@ describe("foldEnvelope", () => {
     expect(next.verdict?.call).toBe("MINE");
   });
 
+  it("defaults to locked and updates locked on overlay.mode", () => {
+    const model = initialOverlayModel();
+    expect(model.locked).toBe(true);
+    const unlocked = foldEnvelope(model, envelope("overlay.mode", { locked: false }));
+    expect(unlocked.locked).toBe(false);
+    const relocked = foldEnvelope(unlocked, envelope("overlay.mode", { locked: true }));
+    expect(relocked.locked).toBe(true);
+  });
+
   it("ignores channels the overlay does not display (e.g. session.stats)", () => {
     const model = initialOverlayModel();
     const next = foldEnvelope(model, envelope("session.stats", null));

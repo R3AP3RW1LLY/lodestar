@@ -9,6 +9,7 @@ import type {
   AppHealth,
   Channel,
   GpuInfo,
+  OverlayMode,
   OverlayToggleResult,
   RootState,
   SecretsPresence,
@@ -61,6 +62,8 @@ export interface IpcDeps {
   readonly listVoices: () => readonly TtsVoiceOption[];
   /** Command Deck overlay toggle: show/hide the in-game overlay, report new visibility. */
   readonly toggleOverlay: () => OverlayToggleResult;
+  /** Command Deck overlay lock toggle: lock (click-through) ⇄ unlock (arrange), report new mode. */
+  readonly lockOverlay: () => OverlayMode;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -118,5 +121,9 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
 
   ipcMain.handle("overlay.toggle", (): WireResult<OverlayToggleResult> =>
     toWireResult(ok(deps.toggleOverlay())),
+  );
+
+  ipcMain.handle("overlay.lock", (): WireResult<OverlayMode> =>
+    toWireResult(ok(deps.lockOverlay())),
   );
 }
