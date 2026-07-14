@@ -95,5 +95,14 @@ export type {
   Breakdowns,
   Heatmap,
   Heatmaps,
+  BestCategory,
+  PersonalBest,
+  SessionBestInput,
+  PersonalBestsStore,
 } from "./analytics/index.js";
-export { createAnalyticsRepository } from "./analytics/index.js";
+export {
+  createAnalyticsRepository,
+  createPersonalBestsStore,
+  sessionBestValues,
+  BEST_CATEGORIES,
+} from "./analytics/index.js";

@@ -28,3 +28,10 @@ export type { SessionBreakdownInput, BreakdownRow, PairingRow, Breakdowns } from
 export { foldBreakdown, foldPairings, assembleBreakdowns } from "./breakdowns.js";
 export type { Heatmap, Heatmaps, TimeSlotInput, YieldInput } from "./heatmaps.js";
 export { timeProductivityHeatmap, ringCommodityHeatmap } from "./heatmaps.js";
+export type {
+  BestCategory,
+  PersonalBest,
+  SessionBestInput,
+  PersonalBestsStore,
+} from "./personal-bests.js";
+export { BEST_CATEGORIES, createPersonalBestsStore, sessionBestValues } from "./personal-bests.js";
