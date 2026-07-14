@@ -77,3 +77,16 @@ export type { InaraEnvelope, InaraEventResult, InaraCommodityPrice } from "./ina
 export { parseInaraEnvelope, parseInaraCommodityPrices } from "./inara/parse.js";
 export type { InaraClient, InaraConfig, InaraDeps, CommodityQuery } from "./inara/client.js";
 export { createInaraClient } from "./inara/client.js";
+export type { Pkce, CapiToken } from "./capi/oauth.js";
+export {
+  CAPI_AUTH_ORIGIN,
+  CAPI_API_ORIGIN,
+  CAPI_SCOPE,
+  generatePkce,
+  buildAuthorizeUrl,
+  exchangeCodeForToken,
+  refreshAccessToken,
+  isTokenExpired,
+} from "./capi/oauth.js";
+export type { CapiClient, CapiConfig, CapiDeps, CapiTokenStore } from "./capi/client.js";
+export { createCapiClient } from "./capi/client.js";
