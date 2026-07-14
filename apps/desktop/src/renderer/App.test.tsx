@@ -136,7 +136,7 @@ describe("App shell", () => {
   it("shows an 'arrives in Phase N' notice for an unbuilt module (no dead link)", () => {
     stubApi();
     render(<App />);
-    // Manifest's nav button is disabled; the nav communicates the arrival phase.
-    expect(screen.getByRole("button", { name: /manifest/i })).toHaveTextContent(/phase 3/i);
+    // Vein Finder's nav button is disabled; the nav communicates the arrival phase.
+    expect(screen.getByRole("button", { name: /vein finder/i })).toHaveTextContent(/phase 4/i);
   });
 });
