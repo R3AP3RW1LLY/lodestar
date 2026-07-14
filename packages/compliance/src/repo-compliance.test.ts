@@ -15,7 +15,10 @@ import {
   INSTALL_HOSTS,
   RUNTIME_ALLOWLIST,
   RUNTIME_HOSTS,
+  createApiClient,
   createGateway,
+  createMemoryCacheStore,
+  createRateLimiter,
   guardUrl,
 } from "@lodestar/integrations";
 import { findBannedPatterns } from "@lodestar/scripts/banned-patterns";
@@ -95,6 +98,27 @@ describe("compliance: no cloud AI", () => {
     const gw = createGateway({ fetchFn });
     for (const host of [...DENIED_AI_HOSTS, "totally-unknown-" + "host.example"]) {
       const r = await gw.request(`https://${host}/x`);
+      expect(r.ok, `expected refusal for ${host}`).toBe(false);
+    }
+  });
+
+  it("the FULL Step-4.6 client (cache + rate-limit + backoff over the gateway) still refuses every denied/unknown host without a transport hit", async () => {
+    // The client-quality layer must never open a bypass around the enforcement core.
+    const fetchFn = () => {
+      throw new Error("transport must not be reached through the enhanced client");
+    };
+    const client = createApiClient({
+      gateway: createGateway({ fetchFn }),
+      rateLimiter: createRateLimiter(),
+      cache: createMemoryCacheStore(),
+      now: () => 0,
+      sleep: async () => {
+        await Promise.resolve();
+      },
+      rand: () => 0,
+    });
+    for (const host of [...DENIED_AI_HOSTS, "totally-unknown-" + "host.example"]) {
+      const r = await client.request({ url: `https://${host}/x`, ttlMs: 60_000 });
       expect(r.ok, `expected refusal for ${host}`).toBe(false);
     }
   });
