@@ -114,6 +114,7 @@ export {
   createAnalyticsRepository,
   createPersonalBestsStore,
   sessionBestValues,
+  foldPersonalBests,
   BEST_CATEGORIES,
   toCsv,
   parseCsv,

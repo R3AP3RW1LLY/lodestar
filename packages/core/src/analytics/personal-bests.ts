@@ -78,6 +78,33 @@ export function sessionBestValues(
   };
 }
 
+/**
+ * PURE fold of a whole session history into the current records — the Manifest's
+ * personal-best board (no DB writes; the persisted store is for the live
+ * `session.newBest` celebration). Later inputs replace only strictly-beaten records.
+ */
+export function foldPersonalBests(inputs: readonly SessionBestInput[]): PersonalBest[] {
+  const best = new Map<BestCategory, PersonalBest>();
+  for (const input of inputs) {
+    for (const category of BEST_CATEGORIES) {
+      const value = input.values[category];
+      if (!Number.isFinite(value) || value <= 0) continue;
+      const current = best.get(category);
+      if (current === undefined || value > current.value) {
+        best.set(category, {
+          category,
+          value,
+          sessionId: input.sessionId,
+          ship: input.ship,
+          ring: input.ring,
+          achievedAt: input.achievedAt,
+        });
+      }
+    }
+  }
+  return [...best.values()].sort((a, b) => a.category.localeCompare(b.category));
+}
+
 export function createPersonalBestsStore(db: Db): PersonalBestsStore {
   const getValue = db.prepare("SELECT value FROM personal_bests WHERE category = ?");
   const upsert = db.prepare(

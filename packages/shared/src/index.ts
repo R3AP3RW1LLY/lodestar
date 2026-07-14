@@ -92,6 +92,27 @@ export { initialRootState } from "./state.js";
 export type { StateDelta } from "./state-delta.js";
 export { diffRootState, applyStateDelta, deepEqual } from "./state-delta.js";
 export type { SessionSummary, ProspectStats } from "./session.js";
+export type {
+  SessionFilter,
+  SessionListItem,
+  SessionAggregates,
+  CommodityTons,
+  SessionDetail,
+  TrendPoint,
+  BreakdownRow,
+  PairingRow,
+  Breakdowns,
+  Heatmap,
+  Heatmaps,
+  BestCategory,
+  PersonalBest,
+  SessionLimpetEfficiency,
+  LimpetTotals,
+  SessionTimeSplit,
+  TimeSplitTotals,
+  SessionEfficiency,
+  ManifestData,
+} from "./analytics.js";
 export type { AssayReason, AssayMaterial, AssayVerdictEvent } from "./assay.js";
 export type { MiningMethod, Commodity, CommodityId, CommodityLookup } from "./commodities.js";
 export {

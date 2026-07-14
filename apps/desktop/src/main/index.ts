@@ -44,6 +44,7 @@ import { wireAssay } from "./assay-wiring.js";
 import type { AssayWiring } from "./assay-wiring.js";
 import { createAnalyticsExporter } from "./analytics-export.js";
 import type { AnalyticsExporter } from "./analytics-export.js";
+import { buildManifest, buildSessionDetail, emptyManifest } from "./analytics-manifest.js";
 import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
@@ -353,6 +354,10 @@ async function bootstrap(): Promise<void> {
       analyticsExporter !== undefined
         ? analyticsExporter.export(req.kind, req.bom)
         : Promise.resolve({ ok: false, path: null }),
+    getManifest: (filter) =>
+      dbService?.status() === "ok" ? buildManifest(dbService.db, filter) : emptyManifest(),
+    getSessionDetail: (sessionId) =>
+      dbService?.status() === "ok" ? buildSessionDetail(dbService.db, sessionId) : null,
   });
 
   engine.start();

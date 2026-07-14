@@ -11,9 +11,12 @@ import type {
   AppHealth,
   Channel,
   GpuInfo,
+  ManifestData,
   OverlayMode,
   OverlayToggleResult,
   RootState,
+  SessionDetail,
+  SessionFilter,
   SecretsPresence,
   SecretsSetRequest,
   SettingsSetRequest,
@@ -68,6 +71,10 @@ export interface IpcDeps {
   readonly lockOverlay: () => OverlayMode;
   /** Manifest CSV export: build the dataset, show a save dialog, write the file. */
   readonly exportAnalytics: (req: AnalyticsExportRequest) => Promise<AnalyticsExportResult>;
+  /** Manifest dashboards: the full analytics bundle for a filter. */
+  readonly getManifest: (filter: SessionFilter) => ManifestData;
+  /** Manifest drill-down: one session's detail (null if unknown). */
+  readonly getSessionDetail: (sessionId: number) => SessionDetail | null;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -149,4 +156,19 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
       return toWireResult(ok(await deps.exportAnalytics({ kind, bom })));
     },
   );
+
+  ipcMain.handle("analytics.manifest", (raw: unknown): WireResult<ManifestData> => {
+    const filter = (typeof raw === "object" && raw !== null ? raw : {}) as SessionFilter;
+    return toWireResult(ok(deps.getManifest(filter)));
+  });
+
+  ipcMain.handle("analytics.sessionDetail", (raw: unknown): WireResult<SessionDetail | null> => {
+    const sessionId = (raw as { sessionId?: unknown } | null)?.sessionId;
+    if (typeof sessionId !== "number") {
+      return toWireResult(
+        err(domainError("ipc.bad-args", "analytics.sessionDetail requires { sessionId }")),
+      );
+    }
+    return toWireResult(ok(deps.getSessionDetail(sessionId)));
+  });
 }

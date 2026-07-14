@@ -6,6 +6,8 @@ describe("IPC channels", () => {
   it("the channel union is closed and contains exactly the registered channels", () => {
     expect([...CHANNELS].sort()).toEqual([
       "analytics.export",
+      "analytics.manifest",
+      "analytics.sessionDetail",
       "app.health",
       "assay.verdict",
       "journal.autodetect",
