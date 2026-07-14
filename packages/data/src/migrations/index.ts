@@ -13,6 +13,7 @@ import { PROSPECTS_003_SQL } from "./003-prospects.js";
 import { MARKET_004_SQL } from "./004-market.js";
 import { PERSONAL_BESTS_005_SQL } from "./005-personal-bests.js";
 import { GALAXY_006_SQL } from "./006-galaxy.js";
+import { ALERT_RULES_007_SQL } from "./007-alert-rules.js";
 
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: "init", sql: INIT_001_SQL },
@@ -21,4 +22,5 @@ export const MIGRATIONS: readonly Migration[] = [
   { version: 4, name: "market", sql: MARKET_004_SQL },
   { version: 5, name: "personal-bests", sql: PERSONAL_BESTS_005_SQL },
   { version: 6, name: "galaxy", sql: GALAXY_006_SQL },
+  { version: 7, name: "alert-rules", sql: ALERT_RULES_007_SQL },
 ];

@@ -80,6 +80,17 @@ export type { ProspectStatEntry } from "./session/prospect-stats.js";
 export { computeProspectStats, emptyProspectStats } from "./session/prospect-stats.js";
 export type { PriceBookStore, BestPrice, PriceSource, PriceResolver } from "./market/price-book.js";
 export { createPriceBookStore } from "./market/price-book.js";
+export type { LedgerService, CommodityBoardEntry } from "./market/ledger-service.js";
+export { createLedgerService } from "./market/ledger-service.js";
+export type {
+  AlertEngine,
+  AlertRule,
+  AlertRuleInput,
+  AlertKind,
+  AlertDirection,
+  FiredAlert,
+} from "./alerts/alert-engine.js";
+export { createAlertEngine } from "./alerts/alert-engine.js";
 export type { BusLogger, Listener, Subscription, EventBusOptions } from "./bus/event-bus.js";
 export { EventBus } from "./bus/event-bus.js";
 export type {

@@ -22,8 +22,8 @@ describe("migration 006 — galaxy", () => {
        VALUES ('painite', 1, 500000, 'journal', '2025-06-01T12:00:00Z', 'Paesia')`,
     ).run();
 
-    const result = applyMigrations(db, MIGRATIONS); // applies v6 over the populated DB
-    expect(result.atVersion).toBe(6);
+    const result = applyMigrations(db, MIGRATIONS); // applies v6+ over the populated DB
+    expect(result.atVersion).toBe(MIGRATIONS.length);
 
     const tables = (
       db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]
