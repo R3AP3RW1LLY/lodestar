@@ -98,6 +98,14 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     planRuns: () => Promise.resolve([]),
     savePlan: () => ({ runId: null }),
     findVeins: () => [],
+    adviseOutfit: () => ({
+      method: "laser" as const,
+      ship: null,
+      hasLoadout: false,
+      present: [],
+      missingRequired: [],
+      suggestions: [],
+    }),
     ...over,
   };
 }
@@ -119,6 +127,7 @@ describe("registerIpcHandlers", () => {
       "ledger.board",
       "ledger.stations",
       "ledger.trend",
+      "outfitter.advise",
       "overlay.lock",
       "overlay.toggle",
       "planner.plan",

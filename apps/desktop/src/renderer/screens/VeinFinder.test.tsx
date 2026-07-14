@@ -40,6 +40,14 @@ const candidate = (over: Partial<VeinCandidate> = {}): VeinCandidate => ({
 function stubApi(veins: VeinCandidate[] = [candidate()], rejects = false) {
   const api = {
     findVeins: vi.fn(() => (rejects ? Promise.reject(new Error("x")) : Promise.resolve(veins))),
+    adviseOutfit: vi.fn().mockResolvedValue({
+      method: "laser",
+      ship: null,
+      hasLoadout: false,
+      present: [],
+      missingRequired: [],
+      suggestions: [],
+    }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
   return api;

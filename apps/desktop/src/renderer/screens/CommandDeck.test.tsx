@@ -30,6 +30,14 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     planRuns: vi.fn().mockResolvedValue([]),
     savePlan: vi.fn().mockResolvedValue({ runId: null }),
     findVeins: vi.fn().mockResolvedValue([]),
+    adviseOutfit: vi.fn().mockResolvedValue({
+      method: "laser",
+      ship: null,
+      hasLoadout: false,
+      present: [],
+      missingRequired: [],
+      suggestions: [],
+    }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }

@@ -59,6 +59,14 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
     planRuns: vi.fn().mockResolvedValue([]),
     savePlan: vi.fn().mockResolvedValue({ runId: null }),
     findVeins: vi.fn().mockResolvedValue([]),
+    adviseOutfit: vi.fn().mockResolvedValue({
+      method: "laser",
+      ship: null,
+      hasLoadout: false,
+      present: [],
+      missingRequired: [],
+      suggestions: [],
+    }),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;

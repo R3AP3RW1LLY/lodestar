@@ -6,6 +6,7 @@ import { MfdPanel } from "../components/MfdPanel.js";
 import { DataAgeBadge } from "../components/DataAgeBadge.js";
 import { fmtCredits, fmtInt, fmtNum } from "../format.js";
 import { navigateTo } from "../nav.js";
+import { OutfitterPanel } from "../components/outfitter/OutfitterPanel.js";
 
 const RESERVES = ["Pristine", "Major", "Common", "Low", "Depleted"];
 const RING_TYPES = ["Metallic", "MetalRich", "Rocky", "Icy"];
@@ -75,6 +76,7 @@ export function VeinFinder({
         trailing={<span className="text-cyan-dim">{veins.length} rings</span>}
       />
       <FilterBar filter={filter} onChange={patch} />
+      <OutfitterPanel />
       {status === "loading" && <MfdPanel title="Vein Finder">Scoring hotspots…</MfdPanel>}
       {status === "error" && (
         <MfdPanel title="Vein Finder">

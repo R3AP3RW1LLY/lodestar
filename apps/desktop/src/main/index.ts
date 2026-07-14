@@ -52,6 +52,8 @@ import {
   emptyCartographerBridge,
 } from "./cartographer-wiring.js";
 import { createVeinBridge, emptyVeinBridge } from "./vein-wiring.js";
+import { createOutfitterBridge } from "./outfitter-wiring.js";
+import type { CapturedLoadout } from "./outfitter-wiring.js";
 import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
@@ -191,6 +193,19 @@ async function bootstrap(): Promise<void> {
   // The latest Assay verdict, kept so a late-joining overlay (WS-only, no IPC) can
   // be shown it the instant it connects — not left blank until the next prospect.
   let latestVerdict: AssayVerdictEvent | null = null;
+
+  // Capture the last Loadout for the Outfitter advisor (Step 4.15b): the ship + its
+  // mining modules, read on LoadGame/Loadout, so the advisor can diff it per method.
+  let lastLoadout: CapturedLoadout | undefined;
+  engine.onEvent((event) => {
+    if (event.event === "Loadout") {
+      lastLoadout = {
+        ship: event.ship,
+        modules: event.modules.map((m) => ({ slot: m.slot, item: m.item })),
+      };
+    }
+  });
+  const outfitter = createOutfitterBridge(() => lastLoadout);
 
   // The overlay's saved placement (Step 2.10 arrange). It always boots LOCKED
   // (click-through) — never restarting into a state that blocks game clicks — so
@@ -413,6 +428,7 @@ async function bootstrap(): Promise<void> {
     planRuns: (strategy) => cartographer.plan(strategy),
     savePlan: (index) => ({ runId: cartographer.save(index, new Date().toISOString()) }),
     findVeins: (filter) => veins.find(filter),
+    adviseOutfit: (method) => outfitter.advise(method),
   });
 
   engine.start();

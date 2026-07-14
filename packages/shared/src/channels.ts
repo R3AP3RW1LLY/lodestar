@@ -22,6 +22,7 @@ import type {
 } from "./ledger.js";
 import type { RunPlanView, SavePlanResult } from "./planner.js";
 import type { VeinCandidate } from "./vein.js";
+import type { OutfitterAdvice } from "./outfitter.js";
 
 export interface AppHealth {
   readonly version: string;
@@ -169,6 +170,9 @@ export interface ChannelPayloads {
   // Step 4.13 — Vein Finder (invoke). `veins.find` takes a VeinFilter and returns scored
   // hotspot candidates with full 4.5 score breakdowns + overlap/provenance/age.
   readonly "veins.find": readonly VeinCandidate[];
+  // Step 4.15b — Outfitter (invoke). `outfitter.advise` takes a method and returns the
+  // loadout gap analysis against the commander's last Loadout.
+  readonly "outfitter.advise": OutfitterAdvice;
 }
 
 const CHANNEL_SET = {
@@ -202,6 +206,7 @@ const CHANNEL_SET = {
   "planner.plan": true,
   "planner.save": true,
   "veins.find": true,
+  "outfitter.advise": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

@@ -30,6 +30,8 @@ import type {
   SavePlanResult,
   VeinCandidate,
   VeinFilter,
+  MiningMethod,
+  OutfitterAdvice,
   RootState,
   SessionDetail,
   SessionFilter,
@@ -92,6 +94,7 @@ export interface LodestarApi {
   planRuns: (strategy: PlanStrategy) => Promise<readonly RunPlanView[]>;
   savePlan: (index: number) => Promise<SavePlanResult>;
   findVeins: (filter: VeinFilter) => Promise<readonly VeinCandidate[]>;
+  adviseOutfit: (method: MiningMethod) => Promise<OutfitterAdvice>;
   /** Fetch one session's drill-down detail (null if unknown). */
   getSessionDetail: (sessionId: number) => Promise<SessionDetail | null>;
 }
@@ -126,6 +129,7 @@ export const EXPOSED_API_KEYS = [
   "planRuns",
   "savePlan",
   "findVeins",
+  "adviseOutfit",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
 function unwrap<T>(wire: WireResult<T>): T {
@@ -191,5 +195,6 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
     planRuns: (strategy) => call<readonly RunPlanView[]>("planner.plan", { strategy }),
     savePlan: (index) => call<SavePlanResult>("planner.save", { index }),
     findVeins: (filter) => call<readonly VeinCandidate[]>("veins.find", filter),
+    adviseOutfit: (method) => call<OutfitterAdvice>("outfitter.advise", { method }),
   };
 }

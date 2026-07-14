@@ -167,6 +167,14 @@ function stubApi(
     planRuns: vi.fn().mockResolvedValue([]),
     savePlan: vi.fn().mockResolvedValue({ runId: null }),
     findVeins: vi.fn().mockResolvedValue([]),
+    adviseOutfit: vi.fn().mockResolvedValue({
+      method: "laser",
+      ship: null,
+      hasLoadout: false,
+      present: [],
+      missingRequired: [],
+      suggestions: [],
+    }),
     exportAnalytics: vi.fn().mockResolvedValue({ ok: true, path: "D:/x.csv" }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;

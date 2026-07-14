@@ -26,6 +26,8 @@ import type {
   SavePlanResult,
   VeinCandidate,
   VeinFilter,
+  MiningMethod,
+  OutfitterAdvice,
   RootState,
   SessionDetail,
   SessionFilter,
@@ -103,6 +105,8 @@ export interface IpcDeps {
   readonly savePlan: (index: number) => SavePlanResult;
   /** Vein Finder: scored hotspot candidates for a filter. */
   readonly findVeins: (filter: VeinFilter) => readonly VeinCandidate[];
+  /** Outfitter: loadout gap analysis for a mining method. */
+  readonly adviseOutfit: (method: MiningMethod) => OutfitterAdvice;
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -288,5 +292,20 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
   ipcMain.handle("veins.find", (raw: unknown): WireResult<readonly VeinCandidate[]> => {
     const filter = (typeof raw === "object" && raw !== null ? raw : {}) as VeinFilter;
     return toWireResult(ok(deps.findVeins(filter)));
+  });
+
+  ipcMain.handle("outfitter.advise", (raw: unknown): WireResult<OutfitterAdvice> => {
+    const method = (raw as { method?: unknown } | null)?.method;
+    if (method !== "laser" && method !== "deep-core" && method !== "subsurface") {
+      return toWireResult(
+        err(
+          domainError(
+            "ipc.bad-args",
+            "outfitter.advise requires method ∈ laser|deep-core|subsurface",
+          ),
+        ),
+      );
+    }
+    return toWireResult(ok(deps.adviseOutfit(method)));
   });
 }

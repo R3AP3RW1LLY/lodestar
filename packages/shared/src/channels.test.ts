@@ -18,6 +18,7 @@ describe("IPC channels", () => {
       "ledger.board",
       "ledger.stations",
       "ledger.trend",
+      "outfitter.advise",
       "overlay.lock",
       "overlay.mode",
       "overlay.toggle",
