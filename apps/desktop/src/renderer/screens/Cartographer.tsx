@@ -30,7 +30,7 @@ export function planWaypoints(plan: RunPlanView): string[] {
  * The Cartographer — round-trip run planner (SSOT Step 4.12c). Pick a strategy (Max
  * Profit / Min Time / Safest) and get ranked plan cards: mine here → sell there → return,
  * with a leg-by-leg breakdown + time/profit estimates. **Copy-to-clipboard writes plain
- * system names** for the player to paste into the galaxy map by hand — LODESTAR never
+ * system names** for the player to paste into the galaxy map by hand — Polaris never
  * injects a route into the game.
  */
 export function Cartographer(): React.JSX.Element {

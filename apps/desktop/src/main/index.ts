@@ -97,14 +97,14 @@ function focusExistingWindow(): void {
 function reportFatalStartup(error: unknown): void {
   const message = error instanceof Error ? (error.stack ?? error.message) : String(error);
   try {
-    appendFileSync(join(app.getPath("temp"), "lodestar-startup-error.log"), `${message}\n`);
+    appendFileSync(join(app.getPath("temp"), "polaris-startup-error.log"), `${message}\n`);
   } catch {
     // Emergency path itself failed — nothing more we can durably do.
   }
   try {
-    dialog.showErrorBox("LODESTAR failed to start", message);
+    dialog.showErrorBox("Polaris failed to start", message);
   } catch {
-    console.error("LODESTAR failed to start:", message);
+    console.error("Polaris failed to start:", message);
   }
 }
 
@@ -118,7 +118,7 @@ try {
 
   // Windows groups the taskbar icon by AppUserModelId — match the packaged appId
   // so the brand icon shows on the taskbar (and later, in notifications).
-  app.setAppUserModelId("org.lodestar.app");
+  app.setAppUserModelId("org.polaris.app");
 
   if (!acquireSingleInstance(app, focusExistingWindow)) {
     // Another instance already owns the lock. This marker lets the e2e test

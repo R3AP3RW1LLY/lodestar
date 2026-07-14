@@ -1,6 +1,6 @@
 import { MODULES } from "../modules.js";
 import type { ModuleId } from "../modules.js";
-import logoUrl from "../assets/lodestar-logo-horizontal.svg";
+import logoUrl from "../assets/polaris-logo-horizontal.svg";
 
 export interface NavRailProps {
   readonly active: ModuleId;
@@ -8,7 +8,7 @@ export interface NavRailProps {
 }
 
 /**
- * The nav rail (Step 0.9 / brand pass). The LODESTAR lockup sits at the top;
+ * The nav rail (Step 0.9 / brand pass). The Polaris lockup sits at the top;
  * available modules navigate, unbuilt ones show their arrival phase and are
  * inert (never dead links). A frosted-glass column over the deep backdrop.
  */
@@ -21,7 +21,7 @@ export function NavRail({ active, onSelect }: NavRailProps): React.JSX.Element {
       <div className="mb-3 px-1 pt-1">
         <img
           src={logoUrl}
-          alt="LODESTAR"
+          alt="Polaris"
           className="h-8 w-auto select-none opacity-95 drop-shadow-[0_0_10px_rgba(245,113,27,0.25)]"
           draggable={false}
         />

@@ -47,7 +47,7 @@ export interface TtsService {
   test: () => Promise<TtsTestResult>;
 }
 
-const TEST_PHRASE = "Lodestar voice online. Platinum, thirty-two percent. Mine.";
+const TEST_PHRASE = "Polaris voice online. Platinum, thirty-two percent. Mine.";
 type SpeakOutcome = { readonly ok: true } | { readonly ok: false; readonly error: string };
 
 export function createTtsService(deps: TtsServiceDeps): TtsService {

@@ -63,7 +63,7 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
         <ScreenHeader title="Command Deck" />
         <MfdPanel title="No journal configured">
           <p className="text-sm text-cyan">
-            LODESTAR needs your Elite Dangerous journal folder to show live telemetry.
+            Polaris needs your Elite Dangerous journal folder to show live telemetry.
           </p>
           <p className="mt-2 text-xs text-signal-skip">
             Open <span className="text-orange">Settings</span> to auto-detect or set the journal

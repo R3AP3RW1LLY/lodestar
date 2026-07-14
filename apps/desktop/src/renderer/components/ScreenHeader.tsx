@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
  */
 export function ScreenHeader({
   title,
-  eyebrow = "Lodestar",
+  eyebrow = "Polaris",
   trailing,
 }: {
   readonly title: string;

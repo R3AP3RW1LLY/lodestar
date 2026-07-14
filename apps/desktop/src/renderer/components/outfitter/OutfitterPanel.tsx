@@ -12,7 +12,7 @@ const METHODS: { readonly id: MiningMethod; readonly label: string }[] = [
  * The Outfitter — loadout advisor panel (SSOT Step 4.15b). Pick a mining method and see the
  * gap analysis against your last `Loadout`: what mining modules you have, which REQUIRED
  * ones are missing ("no Pulse Wave Analyser — required for deep-core"), and recommended
- * additions. Read-only — LODESTAR never changes your ship; it only tells you the gaps. It
+ * additions. Read-only — Polaris never changes your ship; it only tells you the gaps. It
  * pairs with the Vein Finder (what to mine ⇄ are you equipped for its method).
  */
 export function OutfitterPanel(): React.JSX.Element {
@@ -52,7 +52,7 @@ export function OutfitterPanel(): React.JSX.Element {
       </div>
       {advice === null || !advice.hasLoadout ? (
         <p className="p-2 text-sm text-signal-skip">
-          No loadout captured yet — LODESTAR reads your ship on the next `Loadout` (switch ship or
+          No loadout captured yet — Polaris reads your ship on the next `Loadout` (switch ship or
           reload the game).
         </p>
       ) : (

@@ -48,7 +48,7 @@ export function StatusBar({ health, connectionLost = false }: StatusBarProps): R
         <>
           <Indicator id="status-db" label="DB" status={health.dbStatus} />
           <Indicator id="status-journal" label="Journal" status={health.journalStatus} />
-          <span className="ml-auto text-signal-skip">LODESTAR v{health.version}</span>
+          <span className="ml-auto text-signal-skip">Polaris v{health.version}</span>
         </>
       )}
     </footer>

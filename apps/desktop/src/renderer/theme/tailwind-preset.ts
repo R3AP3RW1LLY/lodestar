@@ -1,7 +1,7 @@
 import type { Config } from "tailwindcss";
 
 /**
- * LODESTAR design tokens (SSOT §3.1 + brand kit). Faceted-crystal palette:
+ * Polaris design tokens (SSOT §3.1 + brand kit). Faceted-crystal palette:
  * Elite-orange primary, cyan accent, deep near-black glass. Exact brand hexes
  * (brand/README.md). Consumed by tailwind.config.ts as a preset so tokens live
  * in one place; the glass surfaces + gradients live in theme/tokens.css.
