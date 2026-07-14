@@ -40,3 +40,7 @@ export type {
 export { DEFAULT_SELL_WEIGHTS, freshnessWeight, rankSellStations } from "./ledger/best-sell.js";
 export type { TrendPoint as LedgerTrendPoint } from "./ledger/trends.js";
 export { priceTrend } from "./ledger/trends.js";
+export type { PlanStrategy } from "./planner/strategies.js";
+export { PLAN_STRATEGIES, planComparator } from "./planner/strategies.js";
+export type { RunLeg, RunCandidate, PlanInput, RunPlan } from "./planner/run-planner.js";
+export { planRun, rankPlans } from "./planner/run-planner.js";
