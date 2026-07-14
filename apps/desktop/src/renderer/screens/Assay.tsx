@@ -1,15 +1,18 @@
 import { useEffect } from "react";
 import { MfdPanel } from "../components/MfdPanel.js";
+import { ScreenHeader } from "../components/ScreenHeader.js";
 import { VerdictCard } from "../components/VerdictCard.js";
 import { ProspectHistory } from "../components/ProspectHistory.js";
 import { useAssayStore } from "../stores/assay.js";
 import { subscribeGameState, useGameState } from "../stores/game-state.js";
 
 /**
- * The Assay dashboard (SSOT Step 2.9): the live MINE/SKIP verdict card, structured
- * reasons + rock composition, recent-prospect history, and a hit-rate strip fed by
- * the 2.8 prospector stats. The verdict feed is app-level (App.tsx) so history
- * survives screen switches; this screen subscribes to game-state for live stats.
+ * The Assay dashboard (SSOT Step 2.9), on the app-wide deck style: the live
+ * MINE/SKIP verdict card leads as the hero, a KPI strip carries the 2.8 prospector
+ * stats, and recent-prospect history sits alongside. The verdict feed is app-level
+ * (App.tsx) so history survives screen switches; this screen subscribes to
+ * game-state for live stats. Same header / container / glass-panel language as the
+ * Command Deck so the two screens read as one designed surface.
  */
 export function Assay(): React.JSX.Element {
   const latest = useAssayStore((s) => s.latest);
@@ -31,29 +34,36 @@ export function Assay(): React.JSX.Element {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4 p-4" data-testid="assay-screen">
-      <h1 className="font-display text-lg uppercase tracking-[0.3em] text-orange">Assay</h1>
+    <div className="mx-auto flex max-w-6xl flex-col gap-5 p-5" data-testid="assay-screen">
+      <ScreenHeader
+        title="Assay"
+        trailing={
+          <span className="font-display text-xs uppercase tracking-[0.2em] text-cyan-dim">
+            {assayed ? "Session live" : "Standing by"}
+          </span>
+        }
+      />
 
-      <div className="flex flex-wrap gap-3" data-testid="hit-rate-strip">
-        <Stat label="Prospected" value={stats !== undefined ? String(stats.prospected) : "0"} />
-        <Stat
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" data-testid="hit-rate-strip">
+        <Kpi label="Prospected" value={stats !== undefined ? String(stats.prospected) : "0"} />
+        <Kpi
           label="Hit rate"
           value={assayed ? `${String(Math.round(stats.hitRate * 100))}%` : "—"}
         />
-        <Stat
+        <Kpi
           label="Avg best"
           value={assayed ? `${String(Math.round(stats.avgBestMaterialPct))}%` : "—"}
         />
-        <Stat
+        <Kpi
           label="Motherlodes"
           value={stats !== undefined ? String(stats.motherlodeCount) : "0"}
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="lg:col-span-8">
           {latest === null ? (
-            <MfdPanel title="Awaiting prospect">
+            <MfdPanel title="Awaiting prospect" className="h-full">
               <p className="text-sm text-cyan" data-testid="assay-empty">
                 Fire a prospector limpet at an asteroid — the mine/skip verdict lands here.
               </p>
@@ -62,7 +72,7 @@ export function Assay(): React.JSX.Element {
             <VerdictCard verdict={latest} />
           )}
         </div>
-        <MfdPanel title="Recent prospects">
+        <MfdPanel title="Recent prospects" className="h-full lg:col-span-4">
           <ProspectHistory history={history} />
         </MfdPanel>
       </div>
@@ -70,7 +80,8 @@ export function Assay(): React.JSX.Element {
   );
 }
 
-function Stat({
+/** A KPI tile — glass surface, label over a display-weight value; the deck stat idiom. */
+function Kpi({
   label,
   value,
 }: {
@@ -78,9 +89,9 @@ function Stat({
   readonly value: string;
 }): React.JSX.Element {
   return (
-    <div className="glass min-w-[7rem] flex-1 rounded-lg px-3 py-2">
-      <div className="text-[10px] uppercase tracking-[0.18em] text-cyan/70">{label}</div>
-      <div className="font-display text-xl text-orange">{value}</div>
+    <div className="glass rounded-xl px-4 py-3">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-dim">{label}</p>
+      <p className="mt-1 font-display text-2xl text-orange">{value}</p>
     </div>
   );
 }

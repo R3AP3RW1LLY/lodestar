@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { DataAgeBadge } from "../components/DataAgeBadge.js";
 import { MfdPanel } from "../components/MfdPanel.js";
+import { ScreenHeader } from "../components/ScreenHeader.js";
 import { SituationPanel } from "../components/SituationPanel.js";
 import { CargoPanel } from "../components/CargoPanel.js";
 import { SessionStatsPanel } from "../components/SessionStatsPanel.js";
@@ -59,7 +60,7 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
   if (status.mode === "not-configured") {
     return (
       <div className="mx-auto flex max-w-6xl flex-col gap-5 p-5" data-testid="deck-not-configured">
-        <DeckHeader />
+        <ScreenHeader title="Command Deck" />
         <MfdPanel title="No journal configured">
           <p className="text-sm text-cyan">
             LODESTAR needs your Elite Dangerous journal folder to show live telemetry.
@@ -75,7 +76,7 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-5 p-5">
-      <DeckHeader trailing={<DeckStatusBadge status={status} now={now} />} />
+      <ScreenHeader title="Command Deck" trailing={<DeckStatusBadge status={status} now={now} />} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <PanelSlot index={0} className="lg:col-span-8">
           <SituationPanel activity={state.activity} location={state.location} flags={state.flags} />
@@ -94,21 +95,6 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
         </PanelSlot>
       </div>
     </div>
-  );
-}
-
-/** The deck's title lockup — an eyebrow + wordmark with an optional trailing status. */
-function DeckHeader({ trailing }: { readonly trailing?: ReactNode }): React.JSX.Element {
-  return (
-    <header className="flex items-end justify-between gap-4 border-b border-white/10 pb-3">
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.35em] text-cyan-dim">Lodestar</p>
-        <h1 className="mt-0.5 font-display text-xl uppercase tracking-[0.28em] text-orange">
-          Command Deck
-        </h1>
-      </div>
-      {trailing}
-    </header>
   );
 }
 
