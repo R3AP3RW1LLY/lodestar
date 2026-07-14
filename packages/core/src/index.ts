@@ -108,6 +108,8 @@ export type {
   PlanInput,
   PlanStrategy,
 } from "@lodestar/intelligence";
+export type { VeinService, Coords as VeinOrigin } from "./veins/vein-service.js";
+export { createVeinService } from "./veins/vein-service.js";
 export type { BusLogger, Listener, Subscription, EventBusOptions } from "./bus/event-bus.js";
 export { EventBus } from "./bus/event-bus.js";
 export type {

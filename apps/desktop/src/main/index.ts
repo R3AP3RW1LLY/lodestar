@@ -51,6 +51,7 @@ import {
   createCartographerBridge,
   emptyCartographerBridge,
 } from "./cartographer-wiring.js";
+import { createVeinBridge, emptyVeinBridge } from "./vein-wiring.js";
 import { enrichSessionStats } from "./session-stats.js";
 
 let mainWindow: BrowserWindow | undefined;
@@ -359,6 +360,20 @@ async function bootstrap(): Promise<void> {
         })
       : emptyCartographerBridge();
 
+  // Vein Finder (Step 4.13): scored hotspot candidates, distance measured from the live
+  // location. Uses the same DB; empty when unconfigured.
+  const veins =
+    dbService.status() === "ok"
+      ? createVeinBridge(
+          dbService.db,
+          () => {
+            const p = stateBridge.snapshot().location.starPos;
+            return p === undefined ? undefined : { x: p[0], y: p[1], z: p[2] };
+          },
+          () => Date.now(),
+        )
+      : emptyVeinBridge();
+
   registerIpcHandlers(electronIpcAdapter(ipcMain), {
     getHealth: () =>
       buildHealth({
@@ -397,6 +412,7 @@ async function bootstrap(): Promise<void> {
     deleteAlert: (id) => ledger.deleteAlert(id),
     planRuns: (strategy) => cartographer.plan(strategy),
     savePlan: (index) => ({ runId: cartographer.save(index, new Date().toISOString()) }),
+    findVeins: (filter) => veins.find(filter),
   });
 
   engine.start();

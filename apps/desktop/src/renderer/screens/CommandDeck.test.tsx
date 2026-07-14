@@ -29,6 +29,7 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     deleteAlert: vi.fn().mockResolvedValue([]),
     planRuns: vi.fn().mockResolvedValue([]),
     savePlan: vi.fn().mockResolvedValue({ runId: null }),
+    findVeins: vi.fn().mockResolvedValue([]),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }

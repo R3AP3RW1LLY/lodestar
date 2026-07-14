@@ -136,6 +136,7 @@ export type {
   SavePlanRequest,
   SavePlanResult,
 } from "./planner.js";
+export type { VeinOverlapState, VeinScoreBreakdown, VeinCandidate, VeinFilter } from "./vein.js";
 export type { MiningMethod, Commodity, CommodityId, CommodityLookup } from "./commodities.js";
 export {
   COMMODITIES,

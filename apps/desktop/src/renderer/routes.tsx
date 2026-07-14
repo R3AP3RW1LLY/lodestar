@@ -5,6 +5,7 @@ import { Assay } from "./screens/Assay.js";
 import { Manifest } from "./screens/Manifest.js";
 import { Ledger } from "./screens/Ledger.js";
 import { Cartographer } from "./screens/Cartographer.js";
+import { VeinFinder } from "./screens/VeinFinder.js";
 import { moduleById } from "./modules.js";
 import type { ModuleId } from "./modules.js";
 import { MfdPanel } from "./components/MfdPanel.js";
@@ -21,6 +22,7 @@ export const MODULE_SCREENS: Partial<Record<ModuleId, ComponentType>> = {
   manifest: Manifest,
   ledger: Ledger,
   cartographer: Cartographer,
+  "vein-finder": VeinFinder,
   settings: Settings,
 };
 

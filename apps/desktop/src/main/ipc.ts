@@ -24,6 +24,8 @@ import type {
   PlanStrategy,
   RunPlanView,
   SavePlanResult,
+  VeinCandidate,
+  VeinFilter,
   RootState,
   SessionDetail,
   SessionFilter,
@@ -99,6 +101,8 @@ export interface IpcDeps {
   readonly planRuns: (strategy: PlanStrategy) => Promise<readonly RunPlanView[]>;
   /** Cartographer: persist the plan at an index to `runs`. */
   readonly savePlan: (index: number) => SavePlanResult;
+  /** Vein Finder: scored hotspot candidates for a filter. */
+  readonly findVeins: (filter: VeinFilter) => readonly VeinCandidate[];
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -279,5 +283,10 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
       return toWireResult(err(domainError("ipc.bad-args", "planner.save requires { index }")));
     }
     return toWireResult(ok(deps.savePlan(index)));
+  });
+
+  ipcMain.handle("veins.find", (raw: unknown): WireResult<readonly VeinCandidate[]> => {
+    const filter = (typeof raw === "object" && raw !== null ? raw : {}) as VeinFilter;
+    return toWireResult(ok(deps.findVeins(filter)));
   });
 }

@@ -58,6 +58,7 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
     deleteAlert: vi.fn().mockResolvedValue([]),
     planRuns: vi.fn().mockResolvedValue([]),
     savePlan: vi.fn().mockResolvedValue({ runId: null }),
+    findVeins: vi.fn().mockResolvedValue([]),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;
@@ -145,7 +146,7 @@ describe("App shell", () => {
   it("shows an 'arrives in Phase N' notice for an unbuilt module (no dead link)", () => {
     stubApi();
     render(<App />);
-    // Vein Finder's nav button is disabled; the nav communicates the arrival phase.
-    expect(screen.getByRole("button", { name: /vein finder/i })).toHaveTextContent(/phase 4/i);
+    // Assistant's nav button is disabled; the nav communicates the arrival phase.
+    expect(screen.getByRole("button", { name: /assistant/i })).toHaveTextContent(/phase 5/i);
   });
 });

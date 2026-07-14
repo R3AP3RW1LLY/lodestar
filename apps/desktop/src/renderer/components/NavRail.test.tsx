@@ -15,8 +15,8 @@ describe("NavRail", () => {
     expect(screen.getByRole("button", { name: /assay/i })).toBeEnabled(); // built in Phase 2
     expect(screen.getByRole("button", { name: /manifest/i })).toBeEnabled(); // built in Phase 3
     // An unbuilt module is present but shows its arrival phase and is not a dead link.
-    const veinFinder = screen.getByRole("button", { name: /vein finder/i });
-    expect(veinFinder).toHaveTextContent(/phase 4/i);
+    const assistant = screen.getByRole("button", { name: /assistant/i });
+    expect(assistant).toHaveTextContent(/phase 5/i);
   });
 
   it("selects an available module on click", async () => {
@@ -29,7 +29,7 @@ describe("NavRail", () => {
   it("does not navigate for an unavailable module (no dead link)", async () => {
     const onSelect = vi.fn();
     render(<NavRail active="command-deck" onSelect={onSelect} />);
-    await userEvent.click(screen.getByRole("button", { name: /vein finder/i }));
+    await userEvent.click(screen.getByRole("button", { name: /assistant/i }));
     expect(onSelect).not.toHaveBeenCalled();
   });
 

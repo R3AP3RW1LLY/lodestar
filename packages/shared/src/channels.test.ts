@@ -34,6 +34,7 @@ describe("IPC channels", () => {
       "tts.audio",
       "tts.test",
       "tts.voices",
+      "veins.find",
     ]);
   });
 

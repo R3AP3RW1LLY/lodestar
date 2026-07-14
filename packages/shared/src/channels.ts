@@ -21,6 +21,7 @@ import type {
   LedgerAlertRule,
 } from "./ledger.js";
 import type { RunPlanView, SavePlanResult } from "./planner.js";
+import type { VeinCandidate } from "./vein.js";
 
 export interface AppHealth {
   readonly version: string;
@@ -165,6 +166,9 @@ export interface ChannelPayloads {
   // and returns ranked run plans; `planner.save` persists the plan at an index to `runs`.
   readonly "planner.plan": readonly RunPlanView[];
   readonly "planner.save": SavePlanResult;
+  // Step 4.13 — Vein Finder (invoke). `veins.find` takes a VeinFilter and returns scored
+  // hotspot candidates with full 4.5 score breakdowns + overlap/provenance/age.
+  readonly "veins.find": readonly VeinCandidate[];
 }
 
 const CHANNEL_SET = {
@@ -197,6 +201,7 @@ const CHANNEL_SET = {
   "alerts.delete": true,
   "planner.plan": true,
   "planner.save": true,
+  "veins.find": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

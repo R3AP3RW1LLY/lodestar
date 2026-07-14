@@ -6,6 +6,7 @@ import { ModuleView } from "./routes.js";
 import type { ModuleId } from "./modules.js";
 import { useTtsAudio } from "./audio/use-tts-audio.js";
 import { subscribeAssayVerdicts } from "./stores/assay.js";
+import { setNavigator } from "./nav.js";
 
 const HEALTH_POLL_MS = 5000;
 
@@ -18,6 +19,11 @@ export function App(): React.JSX.Element {
   const [health, setHealth] = useState<AppHealth | null>(null);
   const [connectionLost, setConnectionLost] = useState(false);
   useTtsAudio();
+
+  // Register cross-screen navigation (e.g. the Vein Finder → Cartographer handoff).
+  useEffect(() => {
+    setNavigator(setActive);
+  }, []);
 
   // Accumulate Assay verdicts app-level so history survives screen switches.
   useEffect(() => {

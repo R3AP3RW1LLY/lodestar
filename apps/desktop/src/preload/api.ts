@@ -28,6 +28,8 @@ import type {
   PlanStrategy,
   RunPlanView,
   SavePlanResult,
+  VeinCandidate,
+  VeinFilter,
   RootState,
   SessionDetail,
   SessionFilter,
@@ -89,6 +91,7 @@ export interface LodestarApi {
   deleteAlert: (request: AlertIdRequest) => Promise<readonly LedgerAlertRule[]>;
   planRuns: (strategy: PlanStrategy) => Promise<readonly RunPlanView[]>;
   savePlan: (index: number) => Promise<SavePlanResult>;
+  findVeins: (filter: VeinFilter) => Promise<readonly VeinCandidate[]>;
   /** Fetch one session's drill-down detail (null if unknown). */
   getSessionDetail: (sessionId: number) => Promise<SessionDetail | null>;
 }
@@ -122,6 +125,7 @@ export const EXPOSED_API_KEYS = [
   "deleteAlert",
   "planRuns",
   "savePlan",
+  "findVeins",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
 function unwrap<T>(wire: WireResult<T>): T {
@@ -186,5 +190,6 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
     deleteAlert: (request) => call<readonly LedgerAlertRule[]>("alerts.delete", request),
     planRuns: (strategy) => call<readonly RunPlanView[]>("planner.plan", { strategy }),
     savePlan: (index) => call<SavePlanResult>("planner.save", { index }),
+    findVeins: (filter) => call<readonly VeinCandidate[]>("veins.find", filter),
   };
 }

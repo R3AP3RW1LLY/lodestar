@@ -97,6 +97,7 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     deleteAlert: () => [],
     planRuns: () => Promise.resolve([]),
     savePlan: () => ({ runId: null }),
+    findVeins: () => [],
     ...over,
   };
 }
@@ -130,6 +131,7 @@ describe("registerIpcHandlers", () => {
       "system.gpus",
       "tts.test",
       "tts.voices",
+      "veins.find",
     ]);
   });
 
@@ -372,6 +374,20 @@ describe("registerIpcHandlers", () => {
     expect(savePlan).toHaveBeenCalledWith(0);
     expect(good).toEqual({ ok: true, value: { runId: 7 } });
     expect(((await ipc.handlers.get("planner.save")?.({})) as WireResult<unknown>).ok).toBe(false);
+  });
+
+  it("veins.find forwards the filter (or {} for a non-object)", async () => {
+    const ipc = fakeIpcMain();
+    const findVeins = vi.fn(() => []);
+    registerIpcHandlers(ipc, deps({ findVeins }));
+    const good = (await ipc.handlers.get("veins.find")?.({
+      commodityId: "painite",
+      minPad: "L",
+    })) as WireResult<unknown>;
+    expect(findVeins).toHaveBeenCalledWith({ commodityId: "painite", minPad: "L" });
+    expect(good.ok).toBe(true);
+    await ipc.handlers.get("veins.find")?.(42);
+    expect(findVeins).toHaveBeenLastCalledWith({});
   });
 });
 
