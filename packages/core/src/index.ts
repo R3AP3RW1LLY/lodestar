@@ -91,6 +91,16 @@ export type {
   FiredAlert,
 } from "./alerts/alert-engine.js";
 export { createAlertEngine } from "./alerts/alert-engine.js";
+export type {
+  Coords,
+  RouteLeg,
+  RouteInfo,
+  NamedSystem,
+  RouteProvider,
+  PlanRequest,
+  PlanService,
+} from "./planner/plan-service.js";
+export { straightLineRouteProvider, createPlanService } from "./planner/plan-service.js";
 export type { BusLogger, Listener, Subscription, EventBusOptions } from "./bus/event-bus.js";
 export { EventBus } from "./bus/event-bus.js";
 export type {

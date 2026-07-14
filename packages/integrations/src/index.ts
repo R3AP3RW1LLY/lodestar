@@ -90,3 +90,11 @@ export {
 } from "./capi/oauth.js";
 export type { CapiClient, CapiConfig, CapiDeps, CapiTokenStore } from "./capi/client.js";
 export { createCapiClient } from "./capi/client.js";
+export type {
+  SpanshRoute,
+  SpanshRouteParams,
+  SpanshDeps,
+  SpanshClient,
+  SpanshPoll,
+} from "./spansh/client.js";
+export { createSpanshClient, parseJobId, parseRouteResult } from "./spansh/client.js";
