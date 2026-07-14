@@ -11,10 +11,12 @@ import { INIT_001_SQL } from "./001-init.js";
 import { SESSIONS_002_SQL } from "./002-sessions.js";
 import { PROSPECTS_003_SQL } from "./003-prospects.js";
 import { MARKET_004_SQL } from "./004-market.js";
+import { PERSONAL_BESTS_005_SQL } from "./005-personal-bests.js";
 
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: "init", sql: INIT_001_SQL },
   { version: 2, name: "sessions", sql: SESSIONS_002_SQL },
   { version: 3, name: "prospects", sql: PROSPECTS_003_SQL },
   { version: 4, name: "market", sql: MARKET_004_SQL },
+  { version: 5, name: "personal-bests", sql: PERSONAL_BESTS_005_SQL },
 ];
