@@ -73,3 +73,7 @@ export type {
 export { EDDN_ENDPOINT, decodeEddnFrame, createEddnListener } from "./eddn/listener.js";
 export type { EddnMarketSink } from "./eddn/market-sink.js";
 export { createEddnMarketSink } from "./eddn/market-sink.js";
+export type { InaraEnvelope, InaraEventResult, InaraCommodityPrice } from "./inara/parse.js";
+export { parseInaraEnvelope, parseInaraCommodityPrices } from "./inara/parse.js";
+export type { InaraClient, InaraConfig, InaraDeps, CommodityQuery } from "./inara/client.js";
+export { createInaraClient } from "./inara/client.js";
