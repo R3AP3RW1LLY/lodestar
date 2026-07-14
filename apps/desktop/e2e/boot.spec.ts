@@ -52,6 +52,10 @@ test("a second instance quits on its own and opens no second window (single-inst
   });
   try {
     await first.firstWindow();
+    // The app opens its own windows (the Command Deck + the hidden Step-2.10
+    // overlay); capture that baseline so we assert the BLOCKED second instance
+    // adds NONE of its own — without hard-coding how many windows we open.
+    const baselineWindowCount = first.windows().length;
     // Launch the second instance as a raw process (Playwright's launcher would
     // reject an app that deliberately never shows a window). It shares the same
     // data dir, so it fails to acquire the lock and must quit on its own.
@@ -74,7 +78,7 @@ test("a second instance quits on its own and opens no second window (single-inst
     // It must quit cleanly AND for the right reason (lock denial, not a crash).
     expect(exitCode).toBe(0);
     expect(stdout).toContain("LODESTAR_SECOND_INSTANCE_QUIT");
-    expect(first.windows().length).toBe(1);
+    expect(first.windows().length).toBe(baselineWindowCount);
   } finally {
     await first.close();
   }
