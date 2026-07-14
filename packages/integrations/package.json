@@ -14,5 +14,8 @@
   },
   "dependencies": {
     "@lodestar/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@lodestar/data": "workspace:*"
   }
 }

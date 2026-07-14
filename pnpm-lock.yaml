@@ -196,6 +196,10 @@ importers:
       '@lodestar/shared':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
+      '@lodestar/data':
+        specifier: workspace:*
+        version: link:../data
 
   packages/intelligence:
     dependencies:
