@@ -26,3 +26,7 @@ export {
   confirmOverlap,
   overlapMultiplier,
 } from "./hotspots/overlaps.js";
+export type { ScoreInput, ScoreBreakdown } from "./scoring/score.js";
+export { scoreRing } from "./scoring/score.js";
+export type { ScoringWeights } from "./scoring/weights.js";
+export { DEFAULT_SCORING_WEIGHTS } from "./scoring/weights.js";
