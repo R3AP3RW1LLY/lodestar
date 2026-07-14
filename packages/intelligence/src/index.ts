@@ -44,3 +44,13 @@ export type { PlanStrategy } from "./planner/strategies.js";
 export { PLAN_STRATEGIES, planComparator } from "./planner/strategies.js";
 export type { RunLeg, RunCandidate, PlanInput, RunPlan } from "./planner/run-planner.js";
 export { planRun, rankPlans } from "./planner/run-planner.js";
+export type { ModuleCategory, ModuleSpec, MethodTemplate } from "./outfitter/templates.js";
+export { MINING_MODULES, METHOD_TEMPLATES, detectModule } from "./outfitter/templates.js";
+export type {
+  LoadoutModule,
+  ShipSlots,
+  EquippedModule,
+  ModuleGap,
+  LoadoutAdvice,
+} from "./outfitter/advisor.js";
+export { analyzeLoadout } from "./outfitter/advisor.js";
