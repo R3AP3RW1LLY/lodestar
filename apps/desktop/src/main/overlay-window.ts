@@ -14,7 +14,7 @@
 
 import { join } from "node:path";
 import { BrowserWindow } from "electron";
-import type { BrowserWindowConstructorOptions } from "electron";
+import type { BrowserWindowConstructorOptions, Rectangle } from "electron";
 import type { Logger } from "@lodestar/shared";
 import { OVERLAY_WS_PORT_FLAG, OVERLAY_WS_TOKEN_FLAG } from "../overlay-connection.js";
 
@@ -70,6 +70,18 @@ export interface OverlayHandle {
   show: () => void;
   hide: () => void;
   isVisible: () => boolean;
+  /**
+   * Apply the lock state. LOCKED = click-through, immovable, non-resizable,
+   * non-focusable (display-only, safe during flight). UNLOCKED = interactive so
+   * the commander can drag/resize it (the "arrange" state).
+   */
+  setLocked: (locked: boolean) => void;
+  /** Flip the lock and return the new state. */
+  toggleLock: () => boolean;
+  isLocked: () => boolean;
+  getBounds: () => Rectangle;
+  /** Notified after the user finishes a move/resize (arrange mode) — for persistence. */
+  onBoundsChanged: (fn: (bounds: Rectangle) => void) => void;
   destroy: () => void;
 }
 
@@ -77,6 +89,10 @@ export interface OverlayWindowDeps {
   readonly wsPort: number;
   readonly wsToken: string;
   readonly logger?: Logger;
+  /** Restore the commander's saved position/size (arrange mode persistence). */
+  readonly initialBounds?: Rectangle;
+  /** Restore the saved lock state (default locked). */
+  readonly initialLocked?: boolean;
 }
 
 export function createOverlayWindow(deps: OverlayWindowDeps): OverlayHandle {
@@ -85,12 +101,23 @@ export function createOverlayWindow(deps: OverlayWindowDeps): OverlayHandle {
     overlayWindowOptions({ preloadPath, wsPort: deps.wsPort, wsToken: deps.wsToken }),
   );
 
-  // Click-through: every mouse event passes to the game beneath. This is the core
-  // ToS-safe guarantee — the overlay can never receive (or forward) input to a
-  // control. Combined with the renderer's `pointerEvents: none`, it is belt + braces.
-  window.setIgnoreMouseEvents(true);
   // Float above a borderless-windowed game, even over fullscreen UI.
   window.setAlwaysOnTop(true, "screen-saver");
+  if (deps.initialBounds !== undefined) window.setBounds(deps.initialBounds);
+
+  // The lock governs click-through + interactivity. LOCKED is the core ToS-safe
+  // guarantee: every mouse event passes to the game beneath (the overlay can never
+  // receive or forward input to a control), and the window can't be moved, resized,
+  // or focused. UNLOCKED lets the commander deliberately arrange the HUD.
+  let locked = true;
+  const applyLock = (next: boolean): void => {
+    locked = next;
+    window.setIgnoreMouseEvents(next);
+    window.setMovable(!next);
+    window.setResizable(!next);
+    window.setFocusable(!next);
+  };
+  applyLock(deps.initialLocked ?? true);
 
   const devServerUrl = process.env["ELECTRON_RENDERER_URL"];
   if (devServerUrl !== undefined) {
@@ -98,6 +125,16 @@ export function createOverlayWindow(deps: OverlayWindowDeps): OverlayHandle {
   } else {
     void window.loadFile(join(import.meta.dirname, "../renderer/overlay.html"));
   }
+
+  // Persist the commander's placement only after they FINISH a drag/resize.
+  const boundsListeners: ((bounds: Rectangle) => void)[] = [];
+  const emitBounds = (): void => {
+    if (window.isDestroyed()) return;
+    const bounds = window.getBounds();
+    for (const fn of boundsListeners) fn(bounds);
+  };
+  window.on("moved", emitBounds);
+  window.on("resized", emitBounds);
 
   // Show WITHOUT activating — the overlay must never take focus from the game.
   const show = (): void => {
@@ -107,7 +144,7 @@ export function createOverlayWindow(deps: OverlayWindowDeps): OverlayHandle {
     window.hide();
   };
 
-  deps.logger?.info("overlay.created", { wsPort: deps.wsPort });
+  deps.logger?.info("overlay.created", { wsPort: deps.wsPort, locked });
 
   return {
     window,
@@ -121,6 +158,16 @@ export function createOverlayWindow(deps: OverlayWindowDeps): OverlayHandle {
       }
       show();
       return true;
+    },
+    setLocked: applyLock,
+    toggleLock: () => {
+      applyLock(!locked);
+      return locked;
+    },
+    isLocked: () => locked,
+    getBounds: () => window.getBounds(),
+    onBoundsChanged: (fn) => {
+      boundsListeners.push(fn);
     },
     destroy: () => {
       if (!window.isDestroyed()) window.destroy();

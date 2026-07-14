@@ -41,6 +41,16 @@ above it. This is a hard requirement, documented here per SSOT Step 2.10.
 5. **Late-join baseline.** Toggle the overlay OFF, prospect a rock, then toggle it
    ON: it immediately shows the current cargo and the latest verdict (it is primed
    with a `state.snapshot` + the last verdict on connect — never blank-until-next).
+6. **Arrange (move / resize / lock).** Click **Arrange** on the Command Deck (or
+   press **Ctrl+Shift+L**). The overlay grows a dashed border + a drag bar and
+   becomes interactive:
+   - **Move** — drag the top bar; the whole HUD follows.
+   - **Resize** — grab a window edge/corner and drag.
+   - **Lock** — click **Lock** (or Ctrl+Shift+L) again. The chrome disappears and it
+     returns to click-through display-only.
+   Restart the app: the overlay reappears at the size/position you left it, and
+   **always boots LOCKED** (click-through) — it can never restart in a state that
+   blocks game clicks.
 
 **Expected result:** the overlay is a legible, transparent, always-on-top,
 fully click-through HUD that mirrors the verdict + cargo live and never touches the

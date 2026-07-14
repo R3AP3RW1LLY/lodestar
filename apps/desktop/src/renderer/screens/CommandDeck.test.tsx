@@ -16,6 +16,7 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     onStateDelta: vi.fn(() => () => {}),
     onSessionStats: vi.fn(() => () => {}),
     toggleOverlay: vi.fn().mockResolvedValue({ visible: true }),
+    lockOverlay: vi.fn().mockResolvedValue({ locked: false }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }
@@ -116,6 +117,18 @@ describe("CommandDeck", () => {
       .toggleOverlay;
     fireEvent.click(btn);
     expect(toggle).toHaveBeenCalledOnce();
+  });
+
+  it("asks main to lock/unlock the overlay when the Arrange button is clicked", async () => {
+    stubApi("C:/journal");
+    setStore(MINING_STATE, MINING_SESSION);
+    render(<CommandDeck nowMs={NOW} />);
+    const btn = await screen.findByTestId("overlay-lock");
+    expect(btn.textContent).toBe("Arrange"); // locked by default
+    const lock = (window.lodestar as unknown as { lockOverlay: ReturnType<typeof vi.fn> })
+      .lockOverlay;
+    fireEvent.click(btn);
+    expect(lock).toHaveBeenCalledOnce();
   });
 
   it("guides the commander to Settings when no journal is configured", async () => {

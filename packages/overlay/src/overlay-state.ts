@@ -10,6 +10,7 @@ import type {
   AssayMaterial,
   AssayVerdictEvent,
   EnvelopeShape,
+  OverlayMode,
   RootState,
   StateDelta,
 } from "@lodestar/shared";
@@ -17,10 +18,13 @@ import type {
 export interface OverlayModel {
   readonly state: RootState;
   readonly verdict: AssayVerdictEvent | null;
+  /** True = the click-through display HUD; false = the movable/resizable arrange mode. */
+  readonly locked: boolean;
 }
 
 export function initialOverlayModel(): OverlayModel {
-  return { state: initialRootState(), verdict: null };
+  // Locked by default until told otherwise — the overlay is display-only at rest.
+  return { state: initialRootState(), verdict: null, locked: true };
 }
 
 /**
@@ -38,6 +42,8 @@ export function foldEnvelope(model: OverlayModel, env: EnvelopeShape): OverlayMo
       return { ...model, state: applyStateDelta(model.state, env.payload as StateDelta) };
     case "assay.verdict":
       return { ...model, verdict: env.payload as AssayVerdictEvent };
+    case "overlay.mode":
+      return { ...model, locked: (env.payload as OverlayMode).locked };
     default:
       return model;
   }

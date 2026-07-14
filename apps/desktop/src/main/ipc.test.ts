@@ -45,6 +45,7 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     testTts: () => Promise.resolve({ ok: true as const, error: null }),
     listVoices: () => [{ id: "en_US-ryan-high", displayName: "Ryan" }],
     toggleOverlay: () => ({ visible: true }),
+    lockOverlay: () => ({ locked: true }),
     ...over,
   };
 }
@@ -56,6 +57,7 @@ describe("registerIpcHandlers", () => {
     expect([...ipc.handlers.keys()].sort()).toEqual([
       "app.health",
       "journal.autodetect",
+      "overlay.lock",
       "overlay.toggle",
       "secrets.presence",
       "secrets.set",
@@ -75,6 +77,15 @@ describe("registerIpcHandlers", () => {
       visible: boolean;
     }>;
     expect(result).toEqual({ ok: true, value: { visible: false } });
+  });
+
+  it("overlay.lock returns the new overlay mode in a success envelope", async () => {
+    const ipc = fakeIpcMain();
+    registerIpcHandlers(ipc, deps({ lockOverlay: () => ({ locked: false }) }));
+    const result = (await ipc.handlers.get("overlay.lock")?.({})) as WireResult<{
+      locked: boolean;
+    }>;
+    expect(result).toEqual({ ok: true, value: { locked: false } });
   });
 
   it("state.snapshot returns the current root state in a success envelope", async () => {

@@ -1,20 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { BrowserWindowConstructorOptions } from "electron";
+import type { BrowserWindowConstructorOptions, Rectangle } from "electron";
 
 // A minimal Electron BrowserWindow double so createOverlayWindow's glue — the
-// click-through + always-on-top wiring and the show/hide/toggle lifecycle — can be
-// driven and asserted without the real runtime (otherwise only exercised manually
-// over the game per docs/verification/phase-2.md).
+// click-through + always-on-top wiring, the lock (arrange) state, bounds
+// persistence, and the show/hide/toggle lifecycle — can be driven and asserted
+// without the real runtime (otherwise only exercised manually over the game per
+// docs/verification/phase-2.md).
 const { FakeBrowserWindow } = vi.hoisted(() => {
   class FakeBrowserWindow {
     static last: FakeBrowserWindow | undefined;
     readonly options: BrowserWindowConstructorOptions;
     ignoreMouse: boolean | undefined;
+    movable = true;
+    resizable = true;
+    focusable = true;
     alwaysOnTopLevel: string | undefined;
     visible = false;
     destroyed = false;
     loadUrlArg: string | undefined;
     loadFileArg: string | undefined;
+    bounds: Rectangle = { x: 0, y: 0, width: 380, height: 260 };
+    private readonly handlers = new Map<string, () => void>();
     constructor(options: BrowserWindowConstructorOptions) {
       this.options = options;
       FakeBrowserWindow.last = this;
@@ -22,8 +28,29 @@ const { FakeBrowserWindow } = vi.hoisted(() => {
     setIgnoreMouseEvents(value: boolean): void {
       this.ignoreMouse = value;
     }
+    setMovable(value: boolean): void {
+      this.movable = value;
+    }
+    setResizable(value: boolean): void {
+      this.resizable = value;
+    }
+    setFocusable(value: boolean): void {
+      this.focusable = value;
+    }
     setAlwaysOnTop(_value: boolean, level?: string): void {
       this.alwaysOnTopLevel = level;
+    }
+    setBounds(bounds: Rectangle): void {
+      this.bounds = bounds;
+    }
+    getBounds(): Rectangle {
+      return this.bounds;
+    }
+    on(event: string, fn: () => void): void {
+      this.handlers.set(event, fn);
+    }
+    emit(event: string): void {
+      this.handlers.get(event)?.();
     }
     showInactive(): void {
       this.visible = true;
@@ -133,5 +160,53 @@ describe("createOverlayWindow", () => {
     handle.destroy();
     expect(FakeBrowserWindow.last?.destroyed).toBe(true);
     expect(handle.isVisible()).toBe(false);
+  });
+
+  it("starts LOCKED — click-through, immovable, non-resizable, non-focusable", () => {
+    const handle = createOverlayWindow({ wsPort: 1, wsToken: "t" });
+    const win = FakeBrowserWindow.last;
+    expect(handle.isLocked()).toBe(true);
+    expect(win?.ignoreMouse).toBe(true);
+    expect(win?.movable).toBe(false);
+    expect(win?.resizable).toBe(false);
+    expect(win?.focusable).toBe(false);
+  });
+
+  it("unlocking makes it interactive (movable/resizable/focusable, not click-through) and re-locking reverses it", () => {
+    const handle = createOverlayWindow({ wsPort: 1, wsToken: "t" });
+    const win = FakeBrowserWindow.last;
+    expect(handle.toggleLock()).toBe(false); // now unlocked
+    expect(win?.ignoreMouse).toBe(false);
+    expect(win?.movable).toBe(true);
+    expect(win?.resizable).toBe(true);
+    expect(win?.focusable).toBe(true);
+    handle.setLocked(true);
+    expect(handle.isLocked()).toBe(true);
+    expect(win?.ignoreMouse).toBe(true);
+    expect(win?.resizable).toBe(false);
+  });
+
+  it("honours an initial unlocked state + restores saved bounds", () => {
+    const bounds = { x: 100, y: 40, width: 300, height: 200 };
+    const handle = createOverlayWindow({
+      wsPort: 1,
+      wsToken: "t",
+      initialLocked: false,
+      initialBounds: bounds,
+    });
+    expect(handle.isLocked()).toBe(false);
+    expect(handle.getBounds()).toEqual(bounds);
+  });
+
+  it("notifies onBoundsChanged after the user finishes a move/resize", () => {
+    const handle = createOverlayWindow({ wsPort: 1, wsToken: "t" });
+    const seen: Rectangle[] = [];
+    handle.onBoundsChanged((b) => seen.push(b));
+    const win = FakeBrowserWindow.last;
+    if (win !== undefined) win.bounds = { x: 12, y: 34, width: 400, height: 280 };
+    win?.emit("resized");
+    win?.emit("moved");
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toEqual({ x: 12, y: 34, width: 400, height: 280 });
   });
 });

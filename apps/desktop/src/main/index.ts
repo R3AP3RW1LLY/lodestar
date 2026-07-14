@@ -32,6 +32,7 @@ import { acquireSingleInstance } from "./app-lifecycle.js";
 import { createMainWindow } from "./windows.js";
 import { createOverlayWindow } from "./overlay-window.js";
 import type { OverlayHandle } from "./overlay-window.js";
+import { fileOverlayStateStore } from "./overlay-state-store.js";
 import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import { buildHealth } from "./health.js";
 import { createLogger, createRollingDestination } from "./logger.js";
@@ -180,14 +181,26 @@ async function bootstrap(): Promise<void> {
   // be shown it the instant it connects — not left blank until the next prospect.
   let latestVerdict: AssayVerdictEvent | null = null;
 
+  // The overlay's saved placement (Step 2.10 arrange). It always boots LOCKED
+  // (click-through) — never restarting into a state that blocks game clicks — so
+  // only bounds persist. `overlayLocked` is the single source of truth read by both
+  // the WS onConnect primer and the lock toggles, so onConnect needn't reach the
+  // (later-created) window handle.
+  const overlayStore = fileOverlayStateStore(join(dataDir, "overlay-state.json"));
+  const overlaySaved = overlayStore.load();
+  let overlayLocked = true;
+
   const wsToken = randomBytes(32).toString("hex");
   wsServer = await createWsPushServer({
     token: wsToken,
     logger: log,
     // Prime a newly-connected client with the current full state (its delta
-    // baseline) and the latest verdict, before any broadcast reaches it.
+    // baseline), the overlay mode, and the latest verdict, before any broadcast.
     onConnect: () => {
-      const primer: Envelope[] = [envelope("state.snapshot", engine.state())];
+      const primer: Envelope[] = [
+        envelope("state.snapshot", engine.state()),
+        envelope("overlay.mode", { locked: overlayLocked }),
+      ];
       if (latestVerdict !== null) primer.push(envelope("assay.verdict", latestVerdict));
       return primer;
     },
@@ -199,18 +212,50 @@ async function bootstrap(): Promise<void> {
 
   // The in-game overlay (Step 2.10): a transparent, click-through window that
   // subscribes to the loopback WS server (token in argv → its preload → WS
-  // subprotocol; never IPC). Created hidden; toggled from the Command Deck or the
-  // global shortcut. Game must run borderless-windowed (docs/verification/phase-2.md).
-  overlay = createOverlayWindow({ wsPort: ws.port, wsToken, logger: log });
-  const overlayHandle = overlay;
-  const overlayAccelerator = "CommandOrControl+Shift+O";
-  const shortcutRegistered = globalShortcut.register(overlayAccelerator, () => {
-    overlayHandle.toggle();
+  // subprotocol; never IPC). Created hidden; toggled + locked/unlocked from the
+  // Command Deck or global shortcuts; placement persisted across launches. Game
+  // must run borderless-windowed (docs/verification/phase-2.md).
+  overlay = createOverlayWindow({
+    wsPort: ws.port,
+    wsToken,
+    logger: log,
+    initialLocked: overlayLocked,
+    ...(overlaySaved.bounds !== undefined ? { initialBounds: overlaySaved.bounds } : {}),
   });
-  if (!shortcutRegistered) {
-    // Another app owns the accelerator; the Command Deck button still toggles it.
-    log.warn("overlay.shortcut-unavailable", { accelerator: overlayAccelerator });
-  }
+  const overlayHandle = overlay;
+
+  // Lock ⇄ unlock (arrange): apply to the window and tell the overlay over WS so it
+  // shows/hides its move+resize chrome (the lock state itself is not persisted).
+  const setOverlayLocked = (locked: boolean): void => {
+    overlayLocked = locked;
+    overlayHandle.setLocked(locked);
+    ws.broadcast(envelope("overlay.mode", { locked }));
+  };
+  // Persist the new placement after the commander finishes a move/resize.
+  overlayHandle.onBoundsChanged((bounds) => {
+    overlayStore.save({ bounds });
+  });
+
+  const registerShortcut = (accelerator: string, handler: () => void, id: string): void => {
+    if (!globalShortcut.register(accelerator, handler)) {
+      // Another app owns it; the Command Deck buttons still work.
+      log.warn(id, { accelerator });
+    }
+  };
+  registerShortcut(
+    "CommandOrControl+Shift+O",
+    () => {
+      overlayHandle.toggle();
+    },
+    "overlay.shortcut-unavailable",
+  );
+  registerShortcut(
+    "CommandOrControl+Shift+L",
+    () => {
+      setOverlayLocked(!overlayLocked);
+    },
+    "overlay.lock-shortcut-unavailable",
+  );
 
   // Prospector statistics (Step 2.8): the session.stats push is enriched with live
   // stats recomputed from the active session's persisted prospects.
@@ -279,6 +324,10 @@ async function bootstrap(): Promise<void> {
     testTts: () => ttsService.test(),
     listVoices: () => VOICE_CATALOG,
     toggleOverlay: () => ({ visible: overlayHandle.toggle() }),
+    lockOverlay: () => {
+      setOverlayLocked(!overlayLocked);
+      return { locked: overlayLocked };
+    },
   });
 
   engine.start();

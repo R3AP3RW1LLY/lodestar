@@ -81,6 +81,7 @@ export function CommandDeck({ nowMs }: { readonly nowMs?: number } = {}): React.
         trailing={
           <div className="flex items-center gap-3">
             <OverlayToggleButton />
+            <OverlayLockButton />
             <DeckStatusBadge status={status} now={now} />
           </div>
         }
@@ -131,6 +132,36 @@ function OverlayToggleButton(): React.JSX.Element {
       className="clip-mfd border border-white/10 px-2.5 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-cyan/80 transition-colors hover:border-cyan/40 hover:text-cyan"
     >
       Overlay{visible === null ? "" : visible ? " · on" : " · off"}
+    </button>
+  );
+}
+
+/**
+ * Locks/unlocks the overlay (Step 2.10 arrange) via IPC. Locked = click-through
+ * display; unlocked = the movable/resizable arrange state. Starts on the safe
+ * default (locked → the button invites "Arrange"); the label tracks the result.
+ */
+function OverlayLockButton(): React.JSX.Element {
+  const [locked, setLocked] = useState(true);
+  const onClick = (): void => {
+    window.lodestar
+      .lockOverlay()
+      .then((mode) => {
+        setLocked(mode.locked);
+      })
+      .catch(() => {
+        /* lock toggle failed (overlay unavailable) — leave the label unchanged */
+      });
+  };
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid="overlay-lock"
+      aria-pressed={!locked}
+      className="clip-mfd border border-white/10 px-2.5 py-1 font-display text-[10px] uppercase tracking-[0.2em] text-cyan/80 transition-colors hover:border-cyan/40 hover:text-cyan"
+    >
+      {locked ? "Arrange" : "Lock"}
     </button>
   );
 }
