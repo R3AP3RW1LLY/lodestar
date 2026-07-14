@@ -88,20 +88,34 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     exportAnalytics: () => Promise.resolve({ ok: true as const, path: null }),
     getManifest: () => EMPTY_MANIFEST,
     getSessionDetail: () => null,
+    ledgerBoard: () => [],
+    ledgerStations: () => [],
+    ledgerTrend: () => [],
+    listAlerts: () => [],
+    addAlert: () => [],
+    setAlertEnabled: () => [],
+    deleteAlert: () => [],
     ...over,
   };
 }
 
 describe("registerIpcHandlers", () => {
-  it("registers exactly the invoke channels through Step 2.10", () => {
+  it("registers exactly the invoke channels through Step 4.11c", () => {
     const ipc = fakeIpcMain();
     registerIpcHandlers(ipc, deps());
     expect([...ipc.handlers.keys()].sort()).toEqual([
+      "alerts.add",
+      "alerts.delete",
+      "alerts.list",
+      "alerts.setEnabled",
       "analytics.export",
       "analytics.manifest",
       "analytics.sessionDetail",
       "app.health",
       "journal.autodetect",
+      "ledger.board",
+      "ledger.stations",
+      "ledger.trend",
       "overlay.lock",
       "overlay.toggle",
       "secrets.presence",
@@ -262,6 +276,73 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers(ipc, deps({ listGpus: () => Promise.resolve([gpu]) }));
     const result = (await ipc.handlers.get("system.gpus")?.({})) as WireResult<unknown>;
     expect(result).toEqual({ ok: true, value: [gpu] });
+  });
+
+  it("ledger.board wraps the board list", async () => {
+    const ipc = fakeIpcMain();
+    const entry = { commodityId: "painite", best: null };
+    registerIpcHandlers(ipc, deps({ ledgerBoard: () => [entry] }));
+    const r = (await ipc.handlers.get("ledger.board")?.({})) as WireResult<unknown>;
+    expect(r).toEqual({ ok: true, value: [entry] });
+  });
+
+  it("ledger.stations forwards a valid query and rejects a missing commodityId", async () => {
+    const ipc = fakeIpcMain();
+    const ledgerStations = vi.fn(() => []);
+    registerIpcHandlers(ipc, deps({ ledgerStations }));
+    const good = (await ipc.handlers.get("ledger.stations")?.({
+      commodityId: "painite",
+      minPad: "L",
+    })) as WireResult<unknown>;
+    expect(ledgerStations).toHaveBeenCalledWith({ commodityId: "painite", minPad: "L" });
+    expect(good.ok).toBe(true);
+    const bad = (await ipc.handlers.get("ledger.stations")?.({})) as WireResult<unknown>;
+    expect(bad.ok).toBe(false);
+  });
+
+  it("ledger.trend requires commodityId + bucketMs", async () => {
+    const ipc = fakeIpcMain();
+    const ledgerTrend = vi.fn(() => []);
+    registerIpcHandlers(ipc, deps({ ledgerTrend }));
+    const good = (await ipc.handlers.get("ledger.trend")?.({
+      commodityId: "painite",
+      bucketMs: 1000,
+    })) as WireResult<unknown>;
+    expect(good.ok).toBe(true);
+    const bad = (await ipc.handlers.get("ledger.trend")?.({
+      commodityId: "painite",
+    })) as WireResult<unknown>;
+    expect(bad.ok).toBe(false);
+  });
+
+  it("alerts.* forward valid requests and reject malformed ones", async () => {
+    const ipc = fakeIpcMain();
+    const addAlert = vi.fn(() => []);
+    const setAlertEnabled = vi.fn(() => []);
+    const deleteAlert = vi.fn(() => []);
+    registerIpcHandlers(ipc, deps({ addAlert, setAlertEnabled, deleteAlert }));
+
+    expect(((await ipc.handlers.get("alerts.list")?.({})) as WireResult<unknown>).ok).toBe(true);
+
+    const add = (await ipc.handlers.get("alerts.add")?.({
+      kind: "cargo-full",
+      threshold: 80,
+    })) as WireResult<unknown>;
+    expect(addAlert).toHaveBeenCalledWith({ kind: "cargo-full", threshold: 80 });
+    expect(add.ok).toBe(true);
+    expect(
+      ((await ipc.handlers.get("alerts.add")?.({ kind: "bogus" })) as WireResult<unknown>).ok,
+    ).toBe(false);
+
+    await ipc.handlers.get("alerts.setEnabled")?.({ id: 3, enabled: false });
+    expect(setAlertEnabled).toHaveBeenCalledWith(3, false);
+    expect(
+      ((await ipc.handlers.get("alerts.setEnabled")?.({ id: 3 })) as WireResult<unknown>).ok,
+    ).toBe(false);
+
+    await ipc.handlers.get("alerts.delete")?.({ id: 9 });
+    expect(deleteAlert).toHaveBeenCalledWith(9);
+    expect(((await ipc.handlers.get("alerts.delete")?.({})) as WireResult<unknown>).ok).toBe(false);
   });
 });
 

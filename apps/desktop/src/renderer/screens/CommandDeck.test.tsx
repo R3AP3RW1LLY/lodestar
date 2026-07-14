@@ -20,6 +20,13 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     exportAnalytics: vi.fn().mockResolvedValue({ ok: false, path: null }),
     getManifest: vi.fn(),
     getSessionDetail: vi.fn().mockResolvedValue(null),
+    getLedgerBoard: vi.fn().mockResolvedValue([]),
+    getLedgerStations: vi.fn().mockResolvedValue([]),
+    getLedgerTrend: vi.fn().mockResolvedValue([]),
+    listAlerts: vi.fn().mockResolvedValue([]),
+    addAlert: vi.fn().mockResolvedValue([]),
+    setAlertEnabled: vi.fn().mockResolvedValue([]),
+    deleteAlert: vi.fn().mockResolvedValue([]),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }

@@ -6,11 +6,18 @@
  */
 
 import type {
+  AlertRuleRequest,
   AnalyticsExportRequest,
   AnalyticsExportResult,
   AppHealth,
   Channel,
   GpuInfo,
+  LedgerAlertRule,
+  LedgerBoardEntry,
+  LedgerStation,
+  LedgerStationQuery,
+  LedgerTrendPoint,
+  LedgerTrendQuery,
   ManifestData,
   OverlayMode,
   OverlayToggleResult,
@@ -75,6 +82,16 @@ export interface IpcDeps {
   readonly getManifest: (filter: SessionFilter) => ManifestData;
   /** Manifest drill-down: one session's detail (null if unknown). */
   readonly getSessionDetail: (sessionId: number) => SessionDetail | null;
+  /** Ledger board: best sell station per commodity. */
+  readonly ledgerBoard: () => readonly LedgerBoardEntry[];
+  /** Ledger station ranking for one commodity (source + age per row). */
+  readonly ledgerStations: (query: LedgerStationQuery) => readonly LedgerStation[];
+  /** Ledger price trend series for one commodity. */
+  readonly ledgerTrend: (query: LedgerTrendQuery) => readonly LedgerTrendPoint[];
+  readonly listAlerts: () => readonly LedgerAlertRule[];
+  readonly addAlert: (request: AlertRuleRequest) => readonly LedgerAlertRule[];
+  readonly setAlertEnabled: (id: number, enabled: boolean) => readonly LedgerAlertRule[];
+  readonly deleteAlert: (id: number) => readonly LedgerAlertRule[];
 }
 
 export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
@@ -170,5 +187,64 @@ export function registerIpcHandlers(ipcMain: IpcMainLike, deps: IpcDeps): void {
       );
     }
     return toWireResult(ok(deps.getSessionDetail(sessionId)));
+  });
+
+  ipcMain.handle("ledger.board", (): WireResult<readonly LedgerBoardEntry[]> =>
+    toWireResult(ok(deps.ledgerBoard())),
+  );
+
+  ipcMain.handle("ledger.stations", (raw: unknown): WireResult<readonly LedgerStation[]> => {
+    const commodityId = (raw as { commodityId?: unknown } | null)?.commodityId;
+    if (typeof commodityId !== "string") {
+      return toWireResult(
+        err(domainError("ipc.bad-args", "ledger.stations requires { commodityId }")),
+      );
+    }
+    return toWireResult(ok(deps.ledgerStations(raw as LedgerStationQuery)));
+  });
+
+  ipcMain.handle("ledger.trend", (raw: unknown): WireResult<readonly LedgerTrendPoint[]> => {
+    const query = raw as { commodityId?: unknown; bucketMs?: unknown } | null;
+    if (typeof query?.commodityId !== "string" || typeof query.bucketMs !== "number") {
+      return toWireResult(
+        err(domainError("ipc.bad-args", "ledger.trend requires { commodityId, bucketMs }")),
+      );
+    }
+    return toWireResult(ok(deps.ledgerTrend(query as LedgerTrendQuery)));
+  });
+
+  ipcMain.handle("alerts.list", (): WireResult<readonly LedgerAlertRule[]> =>
+    toWireResult(ok(deps.listAlerts())),
+  );
+
+  ipcMain.handle("alerts.add", (raw: unknown): WireResult<readonly LedgerAlertRule[]> => {
+    const req = raw as { kind?: unknown; threshold?: unknown } | null;
+    if (
+      (req?.kind !== "price-threshold" && req?.kind !== "cargo-full") ||
+      typeof req.threshold !== "number"
+    ) {
+      return toWireResult(
+        err(domainError("ipc.bad-args", "alerts.add requires { kind, threshold }")),
+      );
+    }
+    return toWireResult(ok(deps.addAlert(raw as AlertRuleRequest)));
+  });
+
+  ipcMain.handle("alerts.setEnabled", (raw: unknown): WireResult<readonly LedgerAlertRule[]> => {
+    const req = raw as { id?: unknown; enabled?: unknown } | null;
+    if (typeof req?.id !== "number" || typeof req.enabled !== "boolean") {
+      return toWireResult(
+        err(domainError("ipc.bad-args", "alerts.setEnabled requires { id, enabled }")),
+      );
+    }
+    return toWireResult(ok(deps.setAlertEnabled(req.id, req.enabled)));
+  });
+
+  ipcMain.handle("alerts.delete", (raw: unknown): WireResult<readonly LedgerAlertRule[]> => {
+    const id = (raw as { id?: unknown } | null)?.id;
+    if (typeof id !== "number") {
+      return toWireResult(err(domainError("ipc.bad-args", "alerts.delete requires { id }")));
+    }
+    return toWireResult(ok(deps.deleteAlert(id)));
   });
 }
