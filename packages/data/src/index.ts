@@ -4,3 +4,12 @@ export type { Migration, MigrationResult } from "./migrator.js";
 export { applyMigrations, appliedVersions } from "./migrator.js";
 export { MIGRATIONS } from "./migrations/index.js";
 export * from "./repositories/index.js";
+export type {
+  SeedFile,
+  SeedSystem,
+  SeedBody,
+  SeedRing,
+  SeedHotspot,
+  SeedImportSummary,
+} from "./seed-import.js";
+export { parseSeedFile, importSeed } from "./seed-import.js";
