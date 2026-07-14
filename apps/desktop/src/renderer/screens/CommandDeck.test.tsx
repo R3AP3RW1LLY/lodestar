@@ -17,6 +17,7 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     onSessionStats: vi.fn(() => () => {}),
     toggleOverlay: vi.fn().mockResolvedValue({ visible: true }),
     lockOverlay: vi.fn().mockResolvedValue({ locked: false }),
+    exportAnalytics: vi.fn().mockResolvedValue({ ok: false, path: null }),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }

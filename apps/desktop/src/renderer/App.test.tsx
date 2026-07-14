@@ -46,6 +46,7 @@ function stubApi(over: Partial<LodestarApi> = {}): void {
     onAssayVerdict: vi.fn(() => () => {}),
     toggleOverlay: vi.fn().mockResolvedValue({ visible: false }),
     lockOverlay: vi.fn().mockResolvedValue({ locked: true }),
+    exportAnalytics: vi.fn().mockResolvedValue({ ok: false, path: null }),
     ...over,
   };
   (globalThis as unknown as { window: { lodestar: LodestarApi } }).window.lodestar = api;

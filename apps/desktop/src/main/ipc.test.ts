@@ -46,6 +46,7 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     listVoices: () => [{ id: "en_US-ryan-high", displayName: "Ryan" }],
     toggleOverlay: () => ({ visible: true }),
     lockOverlay: () => ({ locked: true }),
+    exportAnalytics: () => Promise.resolve({ ok: true as const, path: null }),
     ...over,
   };
 }
@@ -55,6 +56,7 @@ describe("registerIpcHandlers", () => {
     const ipc = fakeIpcMain();
     registerIpcHandlers(ipc, deps());
     expect([...ipc.handlers.keys()].sort()).toEqual([
+      "analytics.export",
       "app.health",
       "journal.autodetect",
       "overlay.lock",
@@ -86,6 +88,22 @@ describe("registerIpcHandlers", () => {
       locked: boolean;
     }>;
     expect(result).toEqual({ ok: true, value: { locked: false } });
+  });
+
+  it("analytics.export forwards a valid request and rejects an unknown kind", async () => {
+    const ipc = fakeIpcMain();
+    const exportAnalytics = vi.fn(() => Promise.resolve({ ok: true as const, path: "D:/x.csv" }));
+    registerIpcHandlers(ipc, deps({ exportAnalytics }));
+    const good = (await ipc.handlers.get("analytics.export")?.({
+      kind: "sessions",
+      bom: true,
+    })) as WireResult<{ ok: boolean; path: string | null }>;
+    expect(exportAnalytics).toHaveBeenCalledWith({ kind: "sessions", bom: true });
+    expect(good).toEqual({ ok: true, value: { ok: true, path: "D:/x.csv" } });
+    const bad = (await ipc.handlers.get("analytics.export")?.({
+      kind: "nope",
+    })) as WireResult<unknown>;
+    expect(bad.ok).toBe(false);
   });
 
   it("state.snapshot returns the current root state in a success envelope", async () => {

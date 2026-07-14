@@ -99,10 +99,20 @@ export type {
   PersonalBest,
   SessionBestInput,
   PersonalBestsStore,
+  CsvValue,
+  CsvOptions,
+  ExportKind,
+  RefinementExportRow,
+  ProspectExportRow,
 } from "./analytics/index.js";
 export {
   createAnalyticsRepository,
   createPersonalBestsStore,
   sessionBestValues,
   BEST_CATEGORIES,
+  toCsv,
+  parseCsv,
+  sessionsCsv,
+  refinementsCsv,
+  prospectsCsv,
 } from "./analytics/index.js";
