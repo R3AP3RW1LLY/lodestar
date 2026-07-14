@@ -18,6 +18,8 @@ function stubApi(journalPath: string | null = "C:/journal"): void {
     toggleOverlay: vi.fn().mockResolvedValue({ visible: true }),
     lockOverlay: vi.fn().mockResolvedValue({ locked: false }),
     exportAnalytics: vi.fn().mockResolvedValue({ ok: false, path: null }),
+    getManifest: vi.fn(),
+    getSessionDetail: vi.fn().mockResolvedValue(null),
   };
   (globalThis as unknown as { window: { lodestar: unknown } }).window.lodestar = api;
 }

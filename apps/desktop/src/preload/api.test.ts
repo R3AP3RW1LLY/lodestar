@@ -120,4 +120,13 @@ describe("preload API surface", () => {
     expect(await api.listGpus()).toHaveLength(1);
     expect(invoke).toHaveBeenCalledWith("system.gpus");
   });
+
+  it("getManifest + getSessionDetail route to their analytics channels", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true, value: null });
+    const api = createLodestarApi({ invoke, on: vi.fn(() => () => {}) });
+    await api.getManifest({ system: "Paesia" });
+    expect(invoke).toHaveBeenCalledWith("analytics.manifest", { system: "Paesia" });
+    await api.getSessionDetail(7);
+    expect(invoke).toHaveBeenCalledWith("analytics.sessionDetail", { sessionId: 7 });
+  });
 });

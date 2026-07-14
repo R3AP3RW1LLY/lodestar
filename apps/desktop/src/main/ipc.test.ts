@@ -1,8 +1,47 @@
 import { describe, expect, it, vi } from "vitest";
 import { electronIpcAdapter, registerIpcHandlers } from "./ipc.js";
 import type { ElectronIpcMain, IpcMainLike } from "./ipc.js";
-import type { AppHealth, RootState, WireResult } from "@lodestar/shared";
+import type { AppHealth, ManifestData, RootState, WireResult } from "@lodestar/shared";
 import { initialRootState } from "@lodestar/shared";
+
+const EMPTY_MANIFEST: ManifestData = {
+  sessions: [],
+  aggregate: {
+    sessions: 0,
+    tonsRefined: 0,
+    creditsEarned: 0,
+    limpetsLaunched: 0,
+    totalDurationSec: 0,
+    avgTonsPerHour: 0,
+    avgCreditsPerHour: 0,
+    prospected: 0,
+    mineVerdicts: 0,
+    hitRate: 0,
+  },
+  breakdowns: { byCommodity: [], byRing: [], byShip: [], bestPairings: [] },
+  heatmaps: {
+    timeProductivity: { rows: [], cols: [], cells: [] },
+    ringCommodityYield: { rows: [], cols: [], cells: [] },
+  },
+  trend: [],
+  efficiency: {
+    limpets: {
+      perSession: [],
+      totals: {
+        sessions: 0,
+        prospectorLimpets: 0,
+        collectionLimpets: 0,
+        tonsRefined: 0,
+        collectorProductivity: 0,
+      },
+    },
+    timeSplit: {
+      perSession: [],
+      totals: { sessions: 0, durationSec: 0, miningSec: 0, otherSec: 0, miningRatio: 0 },
+    },
+  },
+  personalBests: [],
+};
 
 interface FakeIpcMain extends IpcMainLike {
   readonly handlers: Map<string, (...args: unknown[]) => unknown>;
@@ -47,6 +86,8 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     toggleOverlay: () => ({ visible: true }),
     lockOverlay: () => ({ locked: true }),
     exportAnalytics: () => Promise.resolve({ ok: true as const, path: null }),
+    getManifest: () => EMPTY_MANIFEST,
+    getSessionDetail: () => null,
     ...over,
   };
 }
@@ -57,6 +98,8 @@ describe("registerIpcHandlers", () => {
     registerIpcHandlers(ipc, deps());
     expect([...ipc.handlers.keys()].sort()).toEqual([
       "analytics.export",
+      "analytics.manifest",
+      "analytics.sessionDetail",
       "app.health",
       "journal.autodetect",
       "overlay.lock",
@@ -88,6 +131,32 @@ describe("registerIpcHandlers", () => {
       locked: boolean;
     }>;
     expect(result).toEqual({ ok: true, value: { locked: false } });
+  });
+
+  it("analytics.manifest forwards the filter (or {} for a non-object) and returns the bundle", async () => {
+    const ipc = fakeIpcMain();
+    const getManifest = vi.fn(() => EMPTY_MANIFEST);
+    registerIpcHandlers(ipc, deps({ getManifest }));
+    const r = (await ipc.handlers.get("analytics.manifest")?.({ system: "Paesia" })) as WireResult<
+      typeof EMPTY_MANIFEST
+    >;
+    expect(getManifest).toHaveBeenCalledWith({ system: "Paesia" });
+    expect(r.ok).toBe(true);
+    await ipc.handlers.get("analytics.manifest")?.(undefined); // non-object → {}
+    expect(getManifest).toHaveBeenLastCalledWith({});
+  });
+
+  it("analytics.sessionDetail validates the id and forwards it", async () => {
+    const ipc = fakeIpcMain();
+    const getSessionDetail = vi.fn(() => null);
+    registerIpcHandlers(ipc, deps({ getSessionDetail }));
+    const good = (await ipc.handlers.get("analytics.sessionDetail")?.({
+      sessionId: 5,
+    })) as WireResult<unknown>;
+    expect(getSessionDetail).toHaveBeenCalledWith(5);
+    expect(good).toEqual({ ok: true, value: null });
+    const bad = (await ipc.handlers.get("analytics.sessionDetail")?.({})) as WireResult<unknown>;
+    expect(bad.ok).toBe(false);
   });
 
   it("analytics.export forwards a valid request and rejects an unknown kind", async () => {

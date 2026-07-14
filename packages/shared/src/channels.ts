@@ -13,6 +13,7 @@ import type { RootState } from "./state.js";
 import type { StateDelta } from "./state-delta.js";
 import type { SessionSummary } from "./session.js";
 import type { AssayVerdictEvent } from "./assay.js";
+import type { ManifestData, SessionDetail } from "./analytics.js";
 
 export interface AppHealth {
   readonly version: string;
@@ -138,6 +139,10 @@ export interface ChannelPayloads {
   // Step 3.6 — Manifest CSV export (invoke; request carries the dataset kind + BOM,
   // the reply the written path or a cancel).
   readonly "analytics.export": AnalyticsExportResult;
+  // Step 3.5 — Manifest dashboards (invoke). `analytics.manifest` takes a SessionFilter
+  // arg and returns the full bundle; `analytics.sessionDetail` takes a session id.
+  readonly "analytics.manifest": ManifestData;
+  readonly "analytics.sessionDetail": SessionDetail | null;
 }
 
 const CHANNEL_SET = {
@@ -159,6 +164,8 @@ const CHANNEL_SET = {
   "overlay.lock": true,
   "overlay.mode": true,
   "analytics.export": true,
+  "analytics.manifest": true,
+  "analytics.sessionDetail": true,
 } as const satisfies Record<keyof ChannelPayloads, true>;
 
 export type Channel = keyof ChannelPayloads;

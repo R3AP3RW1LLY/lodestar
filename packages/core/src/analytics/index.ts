@@ -34,7 +34,12 @@ export type {
   SessionBestInput,
   PersonalBestsStore,
 } from "./personal-bests.js";
-export { BEST_CATEGORIES, createPersonalBestsStore, sessionBestValues } from "./personal-bests.js";
+export {
+  BEST_CATEGORIES,
+  createPersonalBestsStore,
+  sessionBestValues,
+  foldPersonalBests,
+} from "./personal-bests.js";
 export type {
   CsvValue,
   CsvOptions,

@@ -13,9 +13,12 @@ import type {
   AssayVerdictEvent,
   Channel,
   GpuInfo,
+  ManifestData,
   OverlayMode,
   OverlayToggleResult,
   RootState,
+  SessionDetail,
+  SessionFilter,
   SecretsPresence,
   SecretsSetRequest,
   SessionSummary,
@@ -63,6 +66,10 @@ export interface LodestarApi {
   lockOverlay: () => Promise<OverlayMode>;
   /** Export an analytics dataset to CSV via a native save dialog. */
   exportAnalytics: (req: AnalyticsExportRequest) => Promise<AnalyticsExportResult>;
+  /** Fetch the full Manifest analytics bundle for a filter. */
+  getManifest: (filter: SessionFilter) => Promise<ManifestData>;
+  /** Fetch one session's drill-down detail (null if unknown). */
+  getSessionDetail: (sessionId: number) => Promise<SessionDetail | null>;
 }
 
 export const EXPOSED_API_KEYS = [
@@ -83,6 +90,8 @@ export const EXPOSED_API_KEYS = [
   "toggleOverlay",
   "lockOverlay",
   "exportAnalytics",
+  "getManifest",
+  "getSessionDetail",
 ] as const satisfies readonly (keyof LodestarApi)[];
 
 function unwrap<T>(wire: WireResult<T>): T {
@@ -135,5 +144,8 @@ export function createLodestarApi(ipc: IpcInvoker): LodestarApi {
     toggleOverlay: () => call<OverlayToggleResult>("overlay.toggle"),
     lockOverlay: () => call<OverlayMode>("overlay.lock"),
     exportAnalytics: (req) => call<AnalyticsExportResult>("analytics.export", req),
+    getManifest: (filter) => call<ManifestData>("analytics.manifest", filter),
+    getSessionDetail: (sessionId) =>
+      call<SessionDetail | null>("analytics.sessionDetail", { sessionId }),
   };
 }

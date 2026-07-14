@@ -1,8 +1,33 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { openDatabase, applyMigrations, MIGRATIONS } from "@lodestar/data";
 import type { Db } from "@lodestar/data";
-import { createPersonalBestsStore, sessionBestValues } from "./personal-bests.js";
-import type { SessionBestInput } from "./personal-bests.js";
+import {
+  createPersonalBestsStore,
+  foldPersonalBests,
+  sessionBestValues,
+} from "./personal-bests.js";
+import type { BestCategory, SessionBestInput } from "./personal-bests.js";
+
+function sessionInput(
+  id: number,
+  ship: string,
+  values: Partial<Record<BestCategory, number>>,
+): SessionBestInput {
+  return {
+    sessionId: id,
+    ship,
+    ring: "R",
+    achievedAt: "2025-06-01T13:00:00Z",
+    values: {
+      tons_per_hour: 0,
+      credits_per_hour: 0,
+      single_rock_value: 0,
+      longest_session: 0,
+      most_tons: 0,
+      ...values,
+    },
+  };
+}
 
 const sessionA: SessionBestInput = {
   sessionId: 1,
@@ -102,6 +127,23 @@ describe("personal bests", () => {
     });
     expect(beaten).toEqual([]);
     expect(store.list()).toEqual([]);
+  });
+
+  it("foldPersonalBests folds a whole history into the current records (pure, no DB)", () => {
+    const bests = foldPersonalBests([
+      sessionInput(1, "Python", { tons_per_hour: 30, most_tons: 30 }),
+      sessionInput(2, "Cutter", { tons_per_hour: 40, most_tons: 20 }), // beats tph, not most_tons
+    ]);
+    expect(bests.find((b) => b.category === "tons_per_hour")).toMatchObject({
+      value: 40,
+      ship: "Cutter",
+    });
+    expect(bests.find((b) => b.category === "most_tons")).toMatchObject({
+      value: 30,
+      ship: "Python",
+    });
+    // Sorted by category, and a 0-valued category is never recorded.
+    expect(bests.map((b) => b.category)).toEqual(["most_tons", "tons_per_hour"]);
   });
 
   it("sessionBestValues maps a session summary + single-rock value into the value set", () => {
