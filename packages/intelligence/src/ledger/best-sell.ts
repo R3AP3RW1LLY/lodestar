@@ -45,8 +45,19 @@ export interface SellWeights {
 }
 
 export const DEFAULT_SELL_WEIGHTS: SellWeights = {
-  version: 1,
-  sourceTrust: { journal: 1.0, capi: 1.0, inara: 0.9, eddn: 0.8, seed: 0.7 },
+  version: 2,
+  // First-party = the commander's own data. The production journal writer (price-book.ts)
+  // stamps `market` (Market.json on dock) and `marketsell` (MarketSell); `journal`/`capi`
+  // are kept for forward sinks. All rank 1.0 — strictly above the spoofable EDDN firehose.
+  sourceTrust: {
+    market: 1.0,
+    marketsell: 1.0,
+    journal: 1.0,
+    capi: 1.0,
+    inara: 0.9,
+    eddn: 0.8,
+    seed: 0.7,
+  },
   unknownSourceTrust: 0.75,
   fullFreshMs: 60 * 60 * 1000, // 1 h
   staleMs: 24 * 60 * 60 * 1000, // 24 h

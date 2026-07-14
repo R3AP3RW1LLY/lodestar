@@ -19,7 +19,7 @@ export function createVeinBridge(
   now: () => number,
 ): VeinBridge {
   const service = createVeinService(db, now);
-  return { find: (filter) => service.candidates(filter, getOrigin(), now()) };
+  return { find: (filter) => service.candidates(filter, getOrigin()) };
 }
 
 export function emptyVeinBridge(): VeinBridge {

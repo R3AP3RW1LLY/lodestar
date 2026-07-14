@@ -63,6 +63,21 @@ describe("ledger service", () => {
     expect(ranked[0]).toMatchObject({ source: "journal", sellPrice: 500_000 });
   });
 
+  it("first-party market rows outrank a higher spoofable EDDN price (real source strings)", () => {
+    // Regression for the whole-phase review: the production journal writer (price-book.ts)
+    // stamps `market`/`marketsell`, NOT the string "journal" the other tests used. Prove the
+    // DB → adapter → ranking path honours first-party against a HIGHER EDDN headline price.
+    db.prepare("DELETE FROM market_snapshots").run();
+    const ins = db.prepare(
+      `INSERT INTO market_snapshots (commodity_id, market_id, sell_price, source, source_ts, station_name, star_system)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    );
+    ins.run("painite", 1, 500_000, "market", "2025-06-01T12:00:00Z", "OwnDock", "Paesia");
+    ins.run("painite", 2, 590_000, "eddn", "2025-06-01T12:00:00Z", "EDDNFirehose", "Borann");
+    const ranked = createLedgerService(db, () => NOW).bestStations("painite");
+    expect(ranked[0]?.stationName).toBe("OwnDock"); // 500k×1.0 > 590k×0.8 = 472k
+  });
+
   it("applies a pad-size filter", () => {
     const svc = createLedgerService(db, () => NOW);
     const ranked = svc.bestStations("painite", { minPad: "L" });

@@ -57,6 +57,41 @@ describe("rankSellStations — golden ranking", () => {
     expect(ranked[0]?.stationName).toBe("Journal"); // 500k×1 > 500k×0.8
   });
 
+  // Regression: the PRODUCTION journal writer (price-book.ts) stamps market_snapshots with
+  // the REAL source strings `market` (Market.json on dock) and `marketsell` (MarketSell),
+  // NOT the string "journal". Both are first-party and MUST outrank a spoofable EDDN price
+  // of the same or higher value — otherwise the DoD/Step-4.11 guarantee is silently inverted.
+  it.each(["market", "marketsell"] as const)(
+    "the real first-party source %s outranks a same-value EDDN price",
+    (firstParty) => {
+      const ranked = rankSellStations(
+        [
+          snap({ marketId: 1, stationName: "EDDN", source: "eddn" }),
+          snap({ marketId: 2, stationName: "OwnMarket", source: firstParty }),
+        ],
+        NOW,
+      );
+      expect(ranked[0]?.stationName).toBe("OwnMarket");
+      expect(DEFAULT_SELL_WEIGHTS.sourceTrust[firstParty]).toBeGreaterThan(
+        DEFAULT_SELL_WEIGHTS.sourceTrust.eddn ?? 0,
+      );
+    },
+  );
+
+  it("the commander's own dock price outranks a HIGHER spoofable EDDN price", () => {
+    const ranked = rankSellStations(
+      [
+        // EDDN claims a higher headline price, but it is a spoofable firehose (trust 0.8).
+        snap({ stationName: "EDDN", sellPrice: 590_000, source: "eddn" }),
+        // The commander's own Market.json, fresh (trust 1.0).
+        snap({ stationName: "OwnMarket", sellPrice: 500_000, source: "market" }),
+      ],
+      NOW,
+    );
+    // 500k×1.0 = 500k > 590k×0.8 = 472k — first-party wins despite the lower headline.
+    expect(ranked[0]?.stationName).toBe("OwnMarket");
+  });
+
   it("ranks a realistic fixture set best-first", () => {
     const ranked = rankSellStations(
       [

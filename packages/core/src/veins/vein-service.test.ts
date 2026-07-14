@@ -59,7 +59,7 @@ describe("vein service", () => {
   const ORIGIN = { x: 0, y: 0, z: 0 };
 
   it("scores + ranks hotspot candidates with the full 4.5 breakdown", () => {
-    const all = svc().candidates({}, ORIGIN, NOW);
+    const all = svc().candidates({}, ORIGIN);
     expect(all.length).toBe(2);
     // The painite ring (priced, pristine, metallic, close) outranks the far depleted LTD.
     expect(all[0]?.commodityId).toBe("painite");
@@ -75,19 +75,19 @@ describe("vein service", () => {
   });
 
   it("surfaces overlap state (candidate = possible) + its commodities", () => {
-    const painite = svc().candidates({ commodityId: "painite" }, ORIGIN, NOW)[0];
+    const painite = svc().candidates({ commodityId: "painite" }, ORIGIN)[0];
     expect(painite?.overlap).toBe("candidate");
     expect(painite?.overlapCommodities).toEqual(["painite", "platinum"]);
   });
 
   it("a confirmed overlap boosts the score (candidate does not)", () => {
-    const before = svc().candidates({ commodityId: "painite" }, ORIGIN, NOW)[0]?.breakdown
+    const before = svc().candidates({ commodityId: "painite" }, ORIGIN)[0]?.breakdown
       .overlapMultiplier;
     createOverlapRepository(db).record(
       { ringId: 1, commodities: ["painite", "platinum"], confidence: "confirmed" },
       "t",
     );
-    const after = svc().candidates({ commodityId: "painite" }, ORIGIN, NOW)[0]?.breakdown
+    const after = svc().candidates({ commodityId: "painite" }, ORIGIN)[0]?.breakdown
       .overlapMultiplier;
     expect(before).toBe(1); // candidate → no boost
     expect(after ?? 0).toBeGreaterThan(1); // confirmed → boost
@@ -96,34 +96,42 @@ describe("vein service", () => {
   it("filters compose: commodity + reserve + ring type + distance + pad", () => {
     expect(
       svc()
-        .candidates({ reserve: "Pristine" }, ORIGIN, NOW)
+        .candidates({ reserve: "Pristine" }, ORIGIN)
         .map((c) => c.commodityId),
     ).toEqual(["painite"]);
     expect(
       svc()
-        .candidates({ ringType: "Icy" }, ORIGIN, NOW)
+        .candidates({ ringType: "Icy" }, ORIGIN)
         .map((c) => c.commodityId),
     ).toEqual(["lowtemperaturediamond"]);
     expect(
       svc()
-        .candidates({ maxDistanceLy: 50 }, ORIGIN, NOW)
+        .candidates({ maxDistanceLy: 50 }, ORIGIN)
         .map((c) => c.systemName),
     ).toEqual(["Paesia"]);
     expect(
       svc()
-        .candidates({ minPad: "L" }, ORIGIN, NOW)
+        .candidates({ minPad: "L" }, ORIGIN)
         .map((c) => c.commodityId),
     ).toEqual(["painite"]); // only painite has a padded market
   });
 
   it("reports null distance when the commander's location is unknown", () => {
-    const c = svc().candidates({ commodityId: "painite" }, undefined, NOW)[0];
+    const c = svc().candidates({ commodityId: "painite" }, undefined)[0];
     expect(c?.distanceLy).toBeNull();
   });
 
   it("carries provenance source + data-age timestamp", () => {
-    const c = svc().candidates({ commodityId: "painite" }, ORIGIN, NOW)[0];
+    const c = svc().candidates({ commodityId: "painite" }, ORIGIN)[0];
     expect(c?.source).toBe("journal");
     expect(c?.updatedAtMs).toBe(Date.parse("2025-06-01T00:00:00Z"));
+  });
+
+  it("an unparseable last_confirmed reads STALE (epoch 0), never masquerades as LIVE", () => {
+    // Corrupt the confirmation timestamp; the badge must not fabricate freshness from `now`.
+    db.prepare("UPDATE hotspots SET last_confirmed = '' WHERE commodity_id = 'painite'").run();
+    const c = svc().candidates({ commodityId: "painite" }, ORIGIN)[0];
+    expect(c?.updatedAtMs).toBe(0); // epoch → classifies STALE, and is IPC-safe (NaN → null)
+    expect(c?.updatedAtMs).not.toBe(NOW);
   });
 });

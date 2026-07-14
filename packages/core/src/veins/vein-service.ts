@@ -22,7 +22,7 @@ export interface Coords {
 }
 
 export interface VeinService {
-  candidates: (filter: VeinFilter, origin: Coords | undefined, nowMs: number) => VeinCandidate[];
+  candidates: (filter: VeinFilter, origin: Coords | undefined) => VeinCandidate[];
 }
 
 interface VeinRow {
@@ -72,7 +72,7 @@ export function createVeinService(db: Db, now: () => number): VeinService {
   }
 
   return {
-    candidates: (filter, origin, nowMs) => {
+    candidates: (filter, origin) => {
       const out: VeinCandidate[] = [];
       for (const row of rowsStmt.all() as VeinRow[]) {
         if (filter.commodityId !== undefined && row.commodity_id !== filter.commodityId) continue;
@@ -128,7 +128,12 @@ export function createVeinService(db: Db, now: () => number): VeinService {
           breakdown,
           score: breakdown.score,
           source: row.source,
-          updatedAtMs: Date.parse(row.last_confirmed) || nowMs,
+          // Honest provenance: an unparseable/missing last_confirmed must NOT masquerade as
+          // fresh. Fall back to epoch 0 (classifies STALE) rather than `nowMs` (which would
+          // read LIVE). 0 is IPC-safe where NaN would serialize to null and break the DTO.
+          updatedAtMs: Number.isNaN(Date.parse(row.last_confirmed))
+            ? 0
+            : Date.parse(row.last_confirmed),
         });
       }
       return out.sort((a, b) => b.score - a.score);
