@@ -101,6 +101,13 @@ export type {
   PlanService,
 } from "./planner/plan-service.js";
 export { straightLineRouteProvider, createPlanService } from "./planner/plan-service.js";
+export type {
+  RunPlan,
+  RunCandidate,
+  RunLeg,
+  PlanInput,
+  PlanStrategy,
+} from "@lodestar/intelligence";
 export type { BusLogger, Listener, Subscription, EventBusOptions } from "./bus/event-bus.js";
 export { EventBus } from "./bus/event-bus.js";
 export type {

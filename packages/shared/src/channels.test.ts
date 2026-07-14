@@ -21,6 +21,8 @@ describe("IPC channels", () => {
       "overlay.lock",
       "overlay.mode",
       "overlay.toggle",
+      "planner.plan",
+      "planner.save",
       "secrets.presence",
       "secrets.set",
       "session.stats",

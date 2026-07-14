@@ -95,6 +95,8 @@ function deps(over: Partial<Parameters<typeof registerIpcHandlers>[1]> = {}) {
     addAlert: () => [],
     setAlertEnabled: () => [],
     deleteAlert: () => [],
+    planRuns: () => Promise.resolve([]),
+    savePlan: () => ({ runId: null }),
     ...over,
   };
 }
@@ -118,6 +120,8 @@ describe("registerIpcHandlers", () => {
       "ledger.trend",
       "overlay.lock",
       "overlay.toggle",
+      "planner.plan",
+      "planner.save",
       "secrets.presence",
       "secrets.set",
       "settings.get",
@@ -343,6 +347,31 @@ describe("registerIpcHandlers", () => {
     await ipc.handlers.get("alerts.delete")?.({ id: 9 });
     expect(deleteAlert).toHaveBeenCalledWith(9);
     expect(((await ipc.handlers.get("alerts.delete")?.({})) as WireResult<unknown>).ok).toBe(false);
+  });
+
+  it("planner.plan validates the strategy and returns ranked plans", async () => {
+    const ipc = fakeIpcMain();
+    const planRuns = vi.fn(() => Promise.resolve([]));
+    registerIpcHandlers(ipc, deps({ planRuns }));
+    const good = (await ipc.handlers.get("planner.plan")?.({
+      strategy: "max-profit",
+    })) as WireResult<unknown>;
+    expect(planRuns).toHaveBeenCalledWith("max-profit");
+    expect(good.ok).toBe(true);
+    const bad = (await ipc.handlers.get("planner.plan")?.({
+      strategy: "bogus",
+    })) as WireResult<unknown>;
+    expect(bad.ok).toBe(false);
+  });
+
+  it("planner.save validates the index and forwards it", async () => {
+    const ipc = fakeIpcMain();
+    const savePlan = vi.fn(() => ({ runId: 7 }));
+    registerIpcHandlers(ipc, deps({ savePlan }));
+    const good = (await ipc.handlers.get("planner.save")?.({ index: 0 })) as WireResult<unknown>;
+    expect(savePlan).toHaveBeenCalledWith(0);
+    expect(good).toEqual({ ok: true, value: { runId: 7 } });
+    expect(((await ipc.handlers.get("planner.save")?.({})) as WireResult<unknown>).ok).toBe(false);
   });
 });
 

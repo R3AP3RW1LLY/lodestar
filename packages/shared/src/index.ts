@@ -127,6 +127,15 @@ export type {
   AlertToggleRequest,
   AlertIdRequest,
 } from "./ledger.js";
+export type {
+  PlanStrategy,
+  PlanLeg,
+  PlanCandidate,
+  RunPlanView,
+  PlanRunsRequest,
+  SavePlanRequest,
+  SavePlanResult,
+} from "./planner.js";
 export type { MiningMethod, Commodity, CommodityId, CommodityLookup } from "./commodities.js";
 export {
   COMMODITIES,
